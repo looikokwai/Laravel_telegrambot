@@ -98,10 +98,6 @@ class TelegramMessageService
                 try {
                     $welcomeMenu = $this->menuService->findMenuItemByKey(self::DEFAULT_START_ROOT_KEY);
                     if ($welcomeMenu) {
-                        Log::info('以 /start 进入欢迎菜单子目录', [
-                            'user_id' => $user->id,
-                            'menu_item_id' => $welcomeMenu->id,
-                        ]);
                         $this->startCommand->execute($user, ['text' => $text], $welcomeMenu->id);
                         return;
                     }
@@ -119,12 +115,6 @@ class TelegramMessageService
             if ($commandHandler) {
                 try {
                     $message = ['text' => $text];
-
-                    // 统一处理所有命令，/start命令的特殊逻辑已移至CallbackRouter
-                    Log::info('TelegramMessageService: Processing command', [
-                        'command' => $command,
-                        'user_id' => $user->id
-                    ]);
                     $commandHandler->execute($user, $message);
                     return;
                 } catch (\Exception $e) {

@@ -75,10 +75,19 @@ class TelegramLanguageController extends Controller
                 ->orderBy('filename')
                 ->get();
 
+            // 处理筛选参数
+            $filters = [
+                'search' => $request->get('search', ''),
+                'status' => $request->get('status', ''),
+            ];
+
             return Inertia::render('Telegram/LanguageManagement', [
                 'languages' => $languages,
+                'menuItems' => [], // 暂时为空数组，后续可以添加菜单项数据
                 'stats' => $stats,
                 'availableImages' => $availableImages,
+                'filters' => $filters,
+                'flash' => session('flash', []),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -93,6 +102,91 @@ class TelegramLanguageController extends Controller
                 'message' => '获取语言列表失败',
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * 筛选语言
+     */
+    public function filter(Request $request)
+    {
+        try {
+            // 根据请求方法处理参数
+            if ($request->isMethod('get')) {
+                $validated = $request->validate([
+                    'search' => 'nullable|string|max:100',
+                    'status' => 'nullable|string|in:active,inactive,default',
+                ]);
+            } else {
+                $validated = $request->validate([
+                    'search' => 'nullable|string|max:100',
+                    'status' => 'nullable|string|in:active,inactive,default',
+                ]);
+            }
+
+            $query = \App\Models\TelegramLanguage::with(['languageImages.image']);
+
+            // 搜索筛选
+            if (!empty($validated['search'])) {
+                $search = $validated['search'];
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('code', 'like', "%{$search}%")
+                      ->orWhere('native_name', 'like', "%{$search}%");
+                });
+            }
+
+            // 状态筛选
+            if (!empty($validated['status'])) {
+                switch ($validated['status']) {
+                    case 'active':
+                        $query->where('is_active', true);
+                        break;
+                    case 'inactive':
+                        $query->where('is_active', false);
+                        break;
+                    case 'default':
+                        $query->where('is_default', true);
+                        break;
+                }
+            }
+
+            $languages = $query->ordered()->get();
+
+            // 为每个语言添加selection_image属性
+            $languages = $languages->map(function ($language) {
+                $selectionImage = $language->languageImages->where('type', 'selection')->first();
+                $language->selection_image = $selectionImage ? $selectionImage->image : null;
+                return $language;
+            });
+
+            $stats = [
+                'total_languages' => $languages->count(),
+                'active_languages' => $languages->where('is_active', true)->count(),
+                'total_translations' => 0,
+            ];
+
+            // 获取可用图片列表
+            $availableImages = \App\Models\TelegramMenuImage::select('id', 'filename', 'width', 'height', 'path')
+                ->orderBy('filename')
+                ->get();
+
+            return Inertia::render('Telegram/LanguageManagement', [
+                'languages' => $languages,
+                'menuItems' => [], // 暂时为空数组，后续可以添加菜单项数据
+                'stats' => $stats,
+                'availableImages' => $availableImages,
+                'filters' => [
+                    'search' => $validated['search'] ?? '',
+                    'status' => $validated['status'] ?? '',
+                ],
+                'flash' => session('flash', []),
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Failed to filter languages: ' . $e->getMessage());
+            return back()->withErrors(['error' => '筛选失败']);
         }
     }
 

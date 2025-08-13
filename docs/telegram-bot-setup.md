@@ -56,6 +56,10 @@ php artisan queue:work
 
 # 或者在后台运行
 php artisan queue:work --daemon
+
+# 测试缓存清理
+php artisan tinker
+>>> \App\Jobs\ClearTelegramCacheJob::dispatch('all');
 ```
 
 ### 开发环境启动

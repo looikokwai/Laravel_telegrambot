@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Modal, Input } from '@/Components/UI';
-import { FaPlus, FaUpload, FaTrash, FaCheck, FaTimes, FaImage } from 'react-icons/fa';
 import { router } from '@inertiajs/react';
+import { Button, Modal, Input } from '@/Components/UI';
+import { FaPlus, FaUpload, FaTrash, FaCheck, FaTimes, FaImage, FaSearch } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 
-const ImageSelector = ({ 
-    value, 
-    onChange, 
-    label = "选择图片", 
+const ImageSelector = ({
+    value,
+    onChange,
+    label = "选择图片",
     placeholder = "请选择图片（可选）",
     className = "",
-    showUpload = true 
+    showUpload = true
 }) => {
     const [availableImages, setAvailableImages] = useState([]);
     const [showImageModal, setShowImageModal] = useState(false);
@@ -24,12 +24,15 @@ const ImageSelector = ({
     // 获取可用图片列表
     const fetchAvailableImages = async () => {
         try {
+            // 获取 CSRF token
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
             // 使用fetch API获取JSON数据
             const response = await fetch('/telegram/images', {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    'X-CSRF-TOKEN': token || ''
                 }
             });
             const data = await response.json();
@@ -80,30 +83,27 @@ const ImageSelector = ({
         formData.append('alt_text', uploadFile.name);
 
         try {
-            const response = await fetch('/telegram/images', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
+            // 使用 Inertia.js router.post 方法，它会自动处理 CSRF token
+            router.post('/telegram/images/upload', formData, {
+                onSuccess: (page) => {
+                    toast.success('图片上传成功');
+                    fetchAvailableImages();
+                    setShowUploadModal(false);
+                    setUploadFile(null);
+                    setUploadPreview(null);
 
-            const data = await response.json();
-            if (data.success) {
-                toast.success('图片上传成功');
-                await fetchAvailableImages();
-                setShowUploadModal(false);
-                setUploadFile(null);
-                setUploadPreview(null);
-                // 自动选择刚上传的图片
-                if (data.data) {
-                    onChange(data.data.id.toString());
-                }
-            } else {
-                toast.error(data.message || '上传失败');
-            }
+                    // 如果返回了新上传的图片数据，自动选择它
+                    if (page.props.flash && page.props.flash.uploadedImage) {
+                        onChange(page.props.flash.uploadedImage.id.toString());
+                    }
+                },
+                onError: (errors) => {
+                    console.error('上传失败:', errors);
+                    toast.error('上传失败');
+                },
+                preserveState: true,
+                preserveScroll: true
+            });
         } catch (error) {
             console.error('上传失败:', error);
             toast.error('上传失败');
@@ -113,7 +113,7 @@ const ImageSelector = ({
     };
 
     // 过滤图片
-    const filteredImages = availableImages.filter(image => 
+    const filteredImages = availableImages.filter(image =>
         image.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (image.alt_text && image.alt_text.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -123,14 +123,14 @@ const ImageSelector = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
                 {label}
             </label>
-            
+
             {/* 当前选中的图片预览 */}
             {selectedImage ? (
                 <div className="mb-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
-                            <img 
-                                src={selectedImage.url} 
+                            <img
+                                src={selectedImage.url}
                                 alt={selectedImage.alt_text || selectedImage.filename}
                                 className="w-16 h-16 object-cover rounded border"
                             />
@@ -177,7 +177,7 @@ const ImageSelector = ({
                     <FaImage className="w-4 h-4" />
                     <span>选择图片</span>
                 </Button>
-                
+
                 {showUpload && (
                     <Button
                         type="button"
@@ -229,11 +229,11 @@ const ImageSelector = ({
                     {/* 图片网格 */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
                         {filteredImages.map(image => (
-                            <div 
+                            <div
                                 key={image.id}
                                 className={`relative border-2 rounded-lg p-2 cursor-pointer transition-all ${
-                                    value === image.id.toString() 
-                                        ? 'border-blue-500 bg-blue-50' 
+                                    value === image.id.toString()
+                                        ? 'border-blue-500 bg-blue-50'
                                         : 'border-gray-200 hover:border-gray-300'
                                 }`}
                                 onClick={() => {
@@ -241,8 +241,8 @@ const ImageSelector = ({
                                     setShowImageModal(false);
                                 }}
                             >
-                                <img 
-                                    src={image.url} 
+                                <img
+                                    src={image.url}
                                     alt={image.alt_text || image.filename}
                                     className="w-full h-24 object-cover rounded mb-2"
                                 />
@@ -322,8 +322,8 @@ const ImageSelector = ({
                     {uploadPreview && (
                         <div className="border border-gray-200 rounded-lg p-4">
                             <p className="text-sm font-medium text-gray-700 mb-2">预览</p>
-                            <img 
-                                src={uploadPreview} 
+                            <img
+                                src={uploadPreview}
                                 alt="预览"
                                 className="max-w-full h-48 object-contain mx-auto rounded"
                             />

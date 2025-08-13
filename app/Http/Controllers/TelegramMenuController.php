@@ -50,7 +50,7 @@ class TelegramMenuController extends Controller
             $menuTree = $this->menuService->getMenuTree($languageId, $includeInactive);
             $languages = $this->languageService->getActiveLanguages();
             $stats = $this->menuService->getMenuStats();
-            
+
             // 获取所有菜单项用于父级选择
             $allMenuItems = $this->menuService->getAllMenuItems();
 

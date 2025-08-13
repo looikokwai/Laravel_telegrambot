@@ -220,6 +220,10 @@ export default function LanguageManagement({
     const [translatingMenuItem, setTranslatingMenuItem] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
+
+    // 调试信息
+    console.log('filters:', filters);
+    console.log('statusFilter:', statusFilter);
     const [formData, setFormData] = useState({
         code: '',
         name: '',
@@ -359,12 +363,18 @@ export default function LanguageManagement({
 
     // 处理搜索
     const handleSearch = () => {
-        router.get('/telegram/languages', {
+        router.post('/telegram/languages/filter', {
             search: searchTerm,
             status: statusFilter
         }, {
+            onSuccess: (page) => {
+                // 筛选成功，数据会自动更新
+            },
+            onError: (errors) => {
+                toast.error('筛选失败');
+            },
             preserveState: true,
-            replace: true
+            preserveScroll: true
         });
     };
 
@@ -493,14 +503,6 @@ export default function LanguageManagement({
                                 <div className="text-sm text-gray-500">总翻译数</div>
                             </div>
                         </Card>
-                        <Card padding="default">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-orange-600">
-                                    {stats.missing_translations || 0}
-                                </div>
-                                <div className="text-sm text-gray-500">缺失翻译</div>
-                            </div>
-                        </Card>
                     </div>
 
                     {/* 搜索和筛选 */}
@@ -519,12 +521,14 @@ export default function LanguageManagement({
                                 <Select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                >
-                                    <option value="">所有状态</option>
-                                    <option value="active">活跃</option>
-                                    <option value="inactive">禁用</option>
-                                    <option value="default">默认语言</option>
-                                </Select>
+                                    placeholder="选择状态"
+                                    options={[
+                                        { value: '', label: '所有状态' },
+                                        { value: 'active', label: '活跃' },
+                                        { value: 'inactive', label: '禁用' },
+                                        { value: 'default', label: '默认语言' }
+                                    ]}
+                                />
                             </div>
                             <div>
                                 <Button
@@ -533,16 +537,6 @@ export default function LanguageManagement({
                                 >
                                     <FaSearch />
                                     <span>搜索</span>
-                                </Button>
-                            </div>
-                            <div>
-                                <Button
-                                    onClick={handleGetMissingTranslations}
-                                    variant="outline"
-                                    className="w-full flex items-center justify-center space-x-2"
-                                >
-                                    <FaLanguage />
-                                    <span>检查缺失翻译</span>
                                 </Button>
                             </div>
                         </div>

@@ -99,6 +99,103 @@ class TelegramImageController extends Controller
     }
 
     /**
+     * 筛选图片
+     */
+    public function filter(Request $request)
+    {
+        try {
+            // 根据请求方法处理参数
+            if ($request->isMethod('get')) {
+                $validated = $request->validate([
+                    'search' => 'nullable|string|max:255',
+                    'mime_type' => 'nullable|string|in:image/jpeg,image/png,image/gif,image/webp',
+                    'size' => 'nullable|string|in:small,medium,large',
+                ]);
+            } else {
+                $validated = $request->validate([
+                    'search' => 'nullable|string|max:255',
+                    'mime_type' => 'nullable|string|in:image/jpeg,image/png,image/gif,image/webp',
+                    'size' => 'nullable|string|in:small,medium,large',
+                ]);
+            }
+
+            $filters = [];
+
+            // 搜索筛选
+            if (!empty($validated['search'])) {
+                $filters['search'] = $validated['search'];
+            }
+
+            // 格式筛选
+            if (!empty($validated['mime_type'])) {
+                $filters['mime_type'] = $validated['mime_type'];
+            }
+
+            // 大小筛选
+            if (!empty($validated['size'])) {
+                switch ($validated['size']) {
+                    case 'small':
+                        $filters['max_size'] = 1024 * 1024; // 1MB
+                        break;
+                    case 'medium':
+                        $filters['min_size'] = 1024 * 1024; // 1MB
+                        $filters['max_size'] = 5 * 1024 * 1024; // 5MB
+                        break;
+                    case 'large':
+                        $filters['min_size'] = 5 * 1024 * 1024; // 5MB
+                        break;
+                }
+
+                // 调试信息
+                Log::info('Image size filter:', [
+                    'size_option' => $validated['size'],
+                    'filters' => $filters
+                ]);
+            }
+
+            $images = $this->imageService->getImages($filters);
+            $menuItems = \App\Models\TelegramMenuItem::with('translations')->get();
+            $languages = \App\Models\TelegramLanguage::ordered()->get(['id','code','name','native_name']);
+
+            // 调试：查看数据库中的图片大小分布
+            $allImages = \App\Models\TelegramMenuImage::select('id', 'filename', 'file_size')->get();
+            Log::info('Database image sizes:', [
+                'total_images' => $allImages->count(),
+                'size_distribution' => [
+                    'small' => $allImages->where('file_size', '<=', 1024 * 1024)->count(),
+                    'medium' => $allImages->where('file_size', '>', 1024 * 1024)->where('file_size', '<=', 5 * 1024 * 1024)->count(),
+                    'large' => $allImages->where('file_size', '>', 5 * 1024 * 1024)->count(),
+                ],
+                'sample_sizes' => $allImages->take(5)->pluck('file_size', 'filename')->toArray()
+            ]);
+
+            $stats = [
+                'total_images' => $images->count(),
+                'total_size' => $images->sum('file_size'),
+                'image_types' => $images->groupBy('mime_type')->map->count(),
+                'associated_images' => \App\Models\TelegramMenuImage::whereHas('menuItemImages')->count(),
+            ];
+
+            return Inertia::render('Telegram/ImageManagement', [
+                'images' => $images->take(20), // 只显示前20个
+                'menuItems' => $menuItems,
+                'stats' => $stats,
+                'languages' => $languages,
+                'filters' => [
+                    'search' => $validated['search'] ?? '',
+                    'mime_type' => $validated['mime_type'] ?? '',
+                    'size' => $validated['size'] ?? '',
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Failed to filter images: ' . $e->getMessage());
+            return back()->withErrors(['error' => '筛选失败']);
+        }
+    }
+
+    /**
      * 获取单个图片详情
      */
     public function show(int $id): JsonResponse
@@ -154,6 +251,7 @@ class TelegramImageController extends Controller
 
             $image = $this->imageService->uploadImage($request->file('image'), $options);
 
+            // 检查是否是 AJAX 请求或 Inertia.js 请求
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
@@ -161,11 +259,30 @@ class TelegramImageController extends Controller
                     'data' => $image,
                 ], 201);
             }
-            return back()->with('success', '图片上传成功');
+
+            // 对于普通表单提交，返回重定向并包含上传的图片数据
+            return back()->with([
+                'success' => '图片上传成功',
+                'uploadedImage' => $image
+            ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '验证失败',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Failed to store image: ' . $e->getMessage());
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '图片上传失败',
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
             return back()->withErrors(['error' => '图片上传失败'])->withInput();
         }
     }

@@ -184,12 +184,20 @@ export default function ImageManagement({
 
     // 处理搜索和筛选
     const handleSearch = () => {
-        const params = new URLSearchParams();
-        if (searchTerm) params.append('search', searchTerm);
-        if (mimeTypeFilter) params.append('mime_type', mimeTypeFilter);
-        if (sizeFilter) params.append('size', sizeFilter);
-
-        router.get(`/telegram/images?${params.toString()}`);
+        router.post('/telegram/images/filter', {
+            search: searchTerm,
+            mime_type: mimeTypeFilter,
+            size: sizeFilter
+        }, {
+            onSuccess: (page) => {
+                // 筛选成功，数据会自动更新
+            },
+            onError: (errors) => {
+                toast.error('筛选失败');
+            },
+            preserveState: true,
+            preserveScroll: true
+        });
     };
 
     // 处理全选
@@ -309,24 +317,28 @@ export default function ImageManagement({
                                 <Select
                                     value={mimeTypeFilter}
                                     onChange={(e) => setMimeTypeFilter(e.target.value)}
-                                >
-                                    <option value="">所有格式</option>
-                                    <option value="image/jpeg">JPEG</option>
-                                    <option value="image/png">PNG</option>
-                                    <option value="image/gif">GIF</option>
-                                    <option value="image/webp">WebP</option>
-                                </Select>
+                                    placeholder="选择格式"
+                                    options={[
+                                        { value: '', label: '所有格式' },
+                                        { value: 'image/jpeg', label: 'JPEG' },
+                                        { value: 'image/png', label: 'PNG' },
+                                        { value: 'image/gif', label: 'GIF' },
+                                        { value: 'image/webp', label: 'WebP' }
+                                    ]}
+                                />
                             </div>
                             <div>
                                 <Select
                                     value={sizeFilter}
                                     onChange={(e) => setSizeFilter(e.target.value)}
-                                >
-                                    <option value="">所有大小</option>
-                                    <option value="small">小于1MB</option>
-                                    <option value="medium">1-5MB</option>
-                                    <option value="large">大于5MB</option>
-                                </Select>
+                                    placeholder="选择大小"
+                                    options={[
+                                        { value: '', label: '所有大小' },
+                                        { value: 'small', label: '小于1MB' },
+                                        { value: 'medium', label: '1-5MB' },
+                                        { value: 'large', label: '大于5MB' }
+                                    ]}
+                                />
                             </div>
                             <div>
                                 <Button
