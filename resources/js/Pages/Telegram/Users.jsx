@@ -1,12 +1,40 @@
-import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { Button, Card, Input } from '@/Components/UI';
-import { FaSearch, FaUserCheck, FaUserTimes } from 'react-icons/fa';
+import { FaSearch, FaUserCheck, FaUserTimes, FaSpinner } from 'react-icons/fa';
 
 export default function TelegramUsers({ users }) {
     const [search, setSearch] = useState('');
-    
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+
     const { post } = useForm();
+
+    // 防抖搜索函数
+    const debouncedSearch = useCallback(
+        (() => {
+            let timeoutId;
+            return (query) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    setSearchLoading(true);
+                    router.get('/telegram/users', { search: query }, {
+                        preserveState: true,
+                        onFinish: () => setSearchLoading(false)
+                    });
+                }, 300);
+            };
+        })(),
+        []
+    );
+
+    // 监听搜索输入变化
+    useEffect(() => {
+        if (search !== searchQuery) {
+            setSearchQuery(search);
+            debouncedSearch(search);
+        }
+    }, [search, searchQuery, debouncedSearch]);
 
     const handleToggleStatus = (userId) => {
         post(`/telegram/users/${userId}/toggle-status`);
@@ -14,20 +42,11 @@ export default function TelegramUsers({ users }) {
 
     // 安全地处理用户数据
     const allUsers = users?.data || [];
-    const filteredUsers = allUsers.filter(user => {
-        if (!search) return true;
-        const searchLower = search.toLowerCase();
-        return (
-            user.first_name?.toLowerCase().includes(searchLower) ||
-            user.username?.toLowerCase().includes(searchLower) ||
-            user.telegram_user_id?.includes(search)
-        );
-    });
 
     return (
         <>
             <Head title="用户管理" />
-            
+
             <div className="py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-6">
@@ -41,15 +60,25 @@ export default function TelegramUsers({ users }) {
                         <div className="mb-6 flex items-center space-x-4">
                             <div className="relative max-w-md">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <FaSearch className="h-4 w-4 text-gray-400" />
+                                    {searchLoading ? (
+                                        <FaSpinner className="h-4 w-4 text-blue-500 animate-spin" />
+                                    ) : (
+                                        <FaSearch className="h-4 w-4 text-gray-400" />
+                                    )}
                                 </div>
                                 <Input
                                     placeholder="搜索用户名、姓名或ID..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="pl-10"
+                                    disabled={searchLoading}
                                 />
                             </div>
+                            {search && (
+                                <div className="text-sm text-gray-500">
+                                    搜索: "{search}" - 找到 {allUsers.length} 个用户
+                                </div>
+                            )}
                         </div>
 
                         <div className="overflow-x-auto">
@@ -74,7 +103,7 @@ export default function TelegramUsers({ users }) {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {filteredUsers.map((user) => (
+                                    {allUsers.map((user) => (
                                         <tr key={user.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
@@ -105,8 +134,8 @@ export default function TelegramUsers({ users }) {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                    user.is_active 
-                                                        ? 'bg-green-100 text-green-800' 
+                                                    user.is_active
+                                                        ? 'bg-green-100 text-green-800'
                                                         : 'bg-red-100 text-red-800'
                                                 }`}>
                                                     {user.is_active ? '活跃' : '非活跃'}
@@ -141,7 +170,7 @@ export default function TelegramUsers({ users }) {
                             </table>
                         </div>
 
-                        {filteredUsers.length === 0 && (
+                        {allUsers.length === 0 && (
                             <div className="text-center py-12">
                                 <div className="text-gray-500">
                                     {search ? '没有找到匹配的用户' : '暂无用户数据'}
@@ -166,54 +195,3 @@ export default function TelegramUsers({ users }) {
         </>
     );
 }
-
-    // 处理删除用户
-    const handleDelete = (userId) => {
-        if (confirm('确定要删除这个用户吗？')) {
-            router.delete(`/telegram/users/${userId}`, {
-                onSuccess: () => {
-                    router.reload({ only: ['users', 'stats'] });
-                },
-                onError: (errors) => {
-                    toast.error(errors.error || '删除失败');
-                }
-            });
-        }
-    };
-
-    // 处理批量删除
-    const handleBulkDelete = () => {
-        if (confirm(`确定要删除选中的 ${selectedUsers.size} 个用户吗？`)) {
-            router.post('/telegram/users/bulk-delete', {
-                ids: Array.from(selectedUsers)
-            }, {
-                onSuccess: () => {
-                    setSelectedUsers(new Set());
-                    router.reload({ only: ['users', 'stats'] });
-                },
-                onError: (errors) => {
-                    toast.error(errors.error || '批量删除失败');
-                }
-            });
-        }
-    };
-
-    // 处理切换用户封禁状态
-    const handleToggleBlock = (userId, isBlocked) => {
-        const action = isBlocked ? 'unblock' : 'block';
-        if (confirm(`确定要${isBlocked ? '解封' : '封禁'}这个用户吗？`)) {
-            router.post(`/telegram/users/${userId}/${action}`, {}, {
-                onSuccess: () => {
-                    router.reload({ only: ['users', 'stats'] });
-                },
-                onError: (errors) => {
-                    toast.error(errors.error || '操作失败');
-                }
-            });
-        }
-    };
-
-    // 处理搜索
-    const handleSearch = (search) => {
-        setSearch(search);
-    };

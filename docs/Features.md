@@ -1,7 +1,7 @@
 # 功能清单（简要）
 
 - Telegram Webhook 接入（POST /telegram/webhook）
-- 多语言与动态菜单（数据库翻译 + 缓存）
+- 多语言与动态菜单（数据库翻译）
 - /start 文本命令定向到欢迎菜单子目录（找不到则回退根级）
 - 语言选择完成后首次展示直接进入欢迎菜单子目录
 - 返回按钮文案支持多语言配置（`telegram_languages.back_label`）
