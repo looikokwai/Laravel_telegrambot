@@ -12,6 +12,7 @@ use App\Services\TelegramBroadcastService;
 use App\Services\TelegramLanguageService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class TelegramBotController extends Controller
 {
@@ -81,20 +82,33 @@ class TelegramBotController extends Controller
     {
         $request->validate([
             'message' => 'required|string|max:4096',
-            'target' => 'sometimes|string|in:all,active,recent,recent_30'
+            'target' => 'sometimes|string|in:all,active,recent,recent_30',
+            'image' => 'nullable|image|mimes:jpeg,png,gif,webp|max:5120', // 5MB
+            'keyboard' => 'nullable|array'
         ]);
 
         $target = $request->get('target', 'active');
+        $imagePath = null;
+        $keyboard = $request->get('keyboard');
+
+        // 处理图片上传
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imagePath = Storage::putFileAs('telegram/broadcast-images', $image, $image->getClientOriginalName());
+        }
 
         $result = $this->broadcastService->broadcast(
             $request->message,
-            $target
+            $target,
+            [],
+            $imagePath,
+            $keyboard
         );
 
         if ($request->header('X-Inertia')) {
             // Inertia 请求：返回重定向 + 闪存
             return back()->with([
-                'success' => "消息将发送给 {$result['sent']} 个用户",
+                'success' => "消息将发送给 {$result['total_users']} 个用户",
                 'broadcastResult' => $result,
             ]);
         }
@@ -102,7 +116,7 @@ class TelegramBotController extends Controller
         // 非 Inertia：返回 JSON
         return response()->json([
             'success' => true,
-            'message' => "消息将发送给 {$result['sent']} 个用户",
+            'message' => "消息将发送给 {$result['total_users']} 个用户",
             'details' => $result
         ]);
     }
@@ -121,6 +135,7 @@ class TelegramBotController extends Controller
             'data' => $stats
         ]);
     }
+
 
     /**
      * 获取Telegram用户列表
@@ -186,12 +201,17 @@ class TelegramBotController extends Controller
     /**
      * 显示消息广播页面
      */
-    public function broadcastPage()
+    public function broadcastPage(Request $request)
     {
         $stats = $this->broadcastService->getBroadcastStats();
+        $data = ['stats' => $stats];
 
-        return inertia('Telegram/Broadcast', [
-            'stats' => $stats
-        ]);
+        // 如果请求包含历史标签，则加载广播历史数据
+        if ($request->get('tab') === 'history') {
+            $data['broadcasts'] = $this->broadcastService->getBroadcastHistory(20);
+            $data['broadcastStats'] = $this->broadcastService->getBroadcastMessageStats();
+        }
+
+        return inertia('Telegram/Broadcast', $data);
     }
 }

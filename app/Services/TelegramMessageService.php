@@ -326,7 +326,7 @@ class TelegramMessageService
                 return false;
             }
 
-            SendTelegramMessage::dispatch($telegramUser->chat_id, $message);
+            SendTelegramMessage::dispatch($telegramUser->chat_id, $message, [], null, null);
             return true;
         } catch (\Exception $e) {
             Log::error('Failed to send message to user: ' . $e->getMessage());
@@ -334,48 +334,7 @@ class TelegramMessageService
         }
     }
 
-    /**
-     * 群发消息
-     */
-    public function broadcastMessage(string $message, string $target = 'active'): int
-    {
-        $users = match ($target) {
-            'all' => TelegramUser::all(),
-            'recent' => TelegramUser::recentlyActive(7)->get(),
-            default => TelegramUser::active()->get()
-        };
 
-        foreach ($users as $user) {
-            SendTelegramMessage::dispatch($user->chat_id, $message);
-        }
-
-        return $users->count();
-    }
-
-    /**
-     * 多语言群发消息
-     */
-    public function broadcastMultilingualMessage(string $messageKey, array $parameters = [], string $target = 'active'): int
-    {
-        $usersByLanguage = match ($target) {
-            'all' => TelegramUser::get()->groupBy('language'),
-            'recent' => TelegramUser::recentlyActive(7)->get()->groupBy('language'),
-            default => TelegramUser::active()->get()->groupBy('language')
-        };
-
-        $totalSent = 0;
-
-        foreach ($usersByLanguage as $language => $users) {
-            $message = TelegramLanguageService::trans($messageKey, $parameters, $language);
-
-            foreach ($users as $user) {
-                SendTelegramMessage::dispatch($user->chat_id, $message);
-                $totalSent++;
-            }
-        }
-
-        return $totalSent;
-    }
 
     /**
      * 发送消息的基础方法

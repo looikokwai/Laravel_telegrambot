@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\TelegramUser;
+use App\Models\BroadcastMessage;
 use App\Jobs\SendTelegramMessage;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class TelegramBroadcastService
 {
@@ -16,19 +18,44 @@ class TelegramBroadcastService
     /**
      * 群发消息给指定目标用户
      */
-    public function broadcast(string $message, string $target = 'active', array $options = []): array
-    {
-        $users = $this->getTargetUsers($target);
-        $sentCount = 0;
-        $failedCount = 0;
+    public function broadcast(
+        string $message,
+        string $target = 'active',
+        array $options = [],
+        ?string $imagePath = null,
+        ?array $keyboard = null
+    ): array {
+        // 1. 创建广播记录
+        $broadcastMessage = BroadcastMessage::create([
+            'message' => $message,
+            'target' => $target,
+            'image_path' => $imagePath,
+            'keyboard' => $keyboard,
+            'total_users' => 0, // 稍后更新
+            'status' => 'pending'
+        ]);
 
+        // 2. 获取目标用户
+        $users = $this->getTargetUsers($target);
+
+        // 3. 更新用户总数
+        $broadcastMessage->update(['total_users' => $users->count()]);
+
+        // 4. 发送消息到队列
         foreach ($users as $user) {
             try {
-                SendTelegramMessage::dispatch($user->chat_id, $message, $options);
-                $sentCount++;
+                SendTelegramMessage::dispatch(
+                    $user->chat_id,
+                    $message,
+                    $options,
+                    $imagePath,
+                    $keyboard,
+                    $broadcastMessage->id, // 传递广播ID用于跟踪
+                    '' // uniqueId
+                );
             } catch (\Exception $e) {
-                $failedCount++;
                 Log::error('Failed to queue broadcast message', [
+                    'broadcast_id' => $broadcastMessage->id,
                     'user_id' => $user->id,
                     'chat_id' => $user->chat_id,
                     'error' => $e->getMessage()
@@ -36,206 +63,19 @@ class TelegramBroadcastService
             }
         }
 
+        // 5. 初始状态设为 pending，等待 Job 完成后更新
+        $broadcastMessage->update([
+            'sent_count' => 0,
+            'failed_count' => 0,
+            'status' => 'pending',
+            'sent_at' => null
+        ]);
+
         return [
+            'broadcast_id' => $broadcastMessage->id,
             'total_users' => $users->count(),
-            'sent' => $sentCount,
-            'failed' => $failedCount,
-            'target' => $target
-        ];
-    }
-
-    /**
-     * 多语言群发消息
-     */
-    public function broadcastMultilingual(string $messageKey, array $parameters = [], string $target = 'active', array $options = []): array
-    {
-        $usersByLanguage = $this->getTargetUsersByLanguage($target);
-        $totalSent = 0;
-        $totalFailed = 0;
-        $languageStats = [];
-
-        foreach ($usersByLanguage as $language => $users) {
-            $message = TelegramLanguageService::trans($messageKey, $parameters, $language);
-            $sentCount = 0;
-            $failedCount = 0;
-
-            foreach ($users as $user) {
-                try {
-                    SendTelegramMessage::dispatch($user->chat_id, $message, $options);
-                    $sentCount++;
-                } catch (\Exception $e) {
-                    $failedCount++;
-                    Log::error('Failed to queue multilingual broadcast message', [
-                        'user_id' => $user->id,
-                        'language' => $language,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            }
-
-            $languageStats[$language] = [
-                'users' => $users->count(),
-                'sent' => $sentCount,
-                'failed' => $failedCount
-            ];
-
-            $totalSent += $sentCount;
-            $totalFailed += $failedCount;
-        }
-
-        return [
-            'total_sent' => $totalSent,
-            'total_failed' => $totalFailed,
-            'target' => $target,
-            'language_stats' => $languageStats
-        ];
-    }
-
-    /**
-     * 个性化群发消息
-     */
-    public function broadcastPersonalized(string $messageKey, callable $getParameters = null, string $target = 'active', array $options = []): array
-    {
-        $users = $this->getTargetUsers($target);
-        $sentCount = 0;
-        $failedCount = 0;
-
-        foreach ($users as $user) {
-            try {
-                $parameters = $getParameters ? $getParameters($user) : [];
-                $message = TelegramLanguageService::transForUser(
-                    $user->telegram_user_id,
-                    $messageKey,
-                    $parameters
-                );
-
-                SendTelegramMessage::dispatch($user->chat_id, $message, $options);
-                $sentCount++;
-            } catch (\Exception $e) {
-                $failedCount++;
-                Log::error('Failed to queue personalized broadcast message', [
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
-
-        return [
-            'total_users' => $users->count(),
-            'sent' => $sentCount,
-            'failed' => $failedCount,
-            'target' => $target
-        ];
-    }
-
-    /**
-     * 使用自定义模板的个性化群发消息
-     */
-    public function broadcastCustomTemplate(string $template, callable $getParameters = null, string $target = 'active', array $options = []): array
-    {
-        $users = $this->getTargetUsers($target);
-        $sentCount = 0;
-        $failedCount = 0;
-
-        foreach ($users as $user) {
-            try {
-                $parameters = $getParameters ? $getParameters($user) : [];
-                
-                // 替换模板中的参数
-                $message = $this->replaceTemplateParameters($template, $parameters);
-
-                SendTelegramMessage::dispatch($user->chat_id, $message, $options);
-                $sentCount++;
-            } catch (\Exception $e) {
-                $failedCount++;
-                Log::error('Failed to queue custom template broadcast message', [
-                    'user_id' => $user->id,
-                    'template' => $template,
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
-
-        return [
-            'total_users' => $users->count(),
-            'sent' => $sentCount,
-            'failed' => $failedCount,
-            'target' => $target,
-            'template_used' => 'custom'
-        ];
-    }
-
-    /**
-     * 替换模板中的参数
-     */
-    private function replaceTemplateParameters(string $template, array $parameters): string
-    {
-        $message = $template;
-        
-        foreach ($parameters as $key => $value) {
-            $message = str_replace(":{$key}", $value, $message);
-        }
-        
-        return $message;
-    }
-
-    /**
-     * 按条件筛选用户群发
-     */
-    public function broadcastToFilteredUsers(string $message, callable $filter, array $options = []): array
-    {
-        $allUsers = TelegramUser::active()->get();
-        $filteredUsers = $allUsers->filter($filter);
-        $sentCount = 0;
-        $failedCount = 0;
-
-        foreach ($filteredUsers as $user) {
-            try {
-                SendTelegramMessage::dispatch($user->chat_id, $message, $options);
-                $sentCount++;
-            } catch (\Exception $e) {
-                $failedCount++;
-                Log::error('Failed to queue filtered broadcast message', [
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
-
-        return [
-            'total_filtered_users' => $filteredUsers->count(),
-            'total_active_users' => $allUsers->count(),
-            'sent' => $sentCount,
-            'failed' => $failedCount
-        ];
-    }
-
-    /**
-     * 延迟群发消息
-     */
-    public function scheduleBroadcast(string $message, \DateTime $scheduledAt, string $target = 'active', array $options = []): array
-    {
-        $users = $this->getTargetUsers($target);
-        $scheduledCount = 0;
-
-        foreach ($users as $user) {
-            try {
-                SendTelegramMessage::dispatch($user->chat_id, $message, $options)
-                    ->delay($scheduledAt);
-                $scheduledCount++;
-            } catch (\Exception $e) {
-                Log::error('Failed to schedule broadcast message', [
-                    'user_id' => $user->id,
-                    'scheduled_at' => $scheduledAt->format('Y-m-d H:i:s'),
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
-
-        return [
-            'total_users' => $users->count(),
-            'scheduled' => $scheduledCount,
-            'scheduled_at' => $scheduledAt->format('Y-m-d H:i:s'),
+            'sent' => 0, // 初始为0，等待Job完成后更新
+            'failed' => 0, // 初始为0，等待Job完成后更新
             'target' => $target
         ];
     }
@@ -254,14 +94,6 @@ class TelegramBroadcastService
         };
     }
 
-    /**
-     * 按语言分组获取目标用户
-     */
-    private function getTargetUsersByLanguage(string $target): Collection
-    {
-        $users = $this->getTargetUsers($target);
-        return $users->groupBy('language');
-    }
 
     /**
      * 获取群发统计信息
@@ -269,7 +101,8 @@ class TelegramBroadcastService
     public function getBroadcastStats(): array
     {
         $userStats = $this->userService->getUserStats();
-        
+        $broadcastStats = $this->getBroadcastMessageStats();
+
         return [
             'available_targets' => [
                 'all' => $userStats['total_users'],
@@ -279,7 +112,36 @@ class TelegramBroadcastService
                 'recent_30_days' => $this->userService->getRecentlyActiveUsers(30)->count(),
             ],
             'language_distribution' => $userStats['language_distribution'],
-            'users_with_language_selected' => $userStats['users_with_language_selected']
+            'users_with_language_selected' => $userStats['users_with_language_selected'],
+            'broadcast_stats' => $broadcastStats
+        ];
+    }
+
+    /**
+     * 获取广播历史
+     */
+    public function getBroadcastHistory(int $perPage = 20): LengthAwarePaginator
+    {
+        return BroadcastMessage::orderBy('created_at', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
+     * 获取广播消息统计
+     */
+    public function getBroadcastMessageStats(): array
+    {
+        $totalBroadcasts = BroadcastMessage::count();
+        $totalSent = BroadcastMessage::sum('sent_count');
+        $totalFailed = BroadcastMessage::sum('failed_count');
+        $recentBroadcasts = BroadcastMessage::recent(7)->count();
+
+        return [
+            'total_broadcasts' => $totalBroadcasts,
+            'total_sent' => $totalSent,
+            'total_failed' => $totalFailed,
+            'success_rate' => $totalSent > 0 ? round(($totalSent - $totalFailed) / $totalSent * 100, 2) : 0,
+            'recent_broadcasts' => $recentBroadcasts
         ];
     }
 }

@@ -88,7 +88,7 @@ class TelegramWebhookService
         $callbackQueryId = $callbackQuery->getId();
 
         $telegramUser = $this->userService->findByTelegramId($userId);
-        
+
         if ($telegramUser) {
             $this->messageService->handleCallbackQuery($telegramUser, $data, $messageId, $callbackQueryId);
         }
