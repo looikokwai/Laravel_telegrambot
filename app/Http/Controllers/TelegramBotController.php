@@ -49,30 +49,50 @@ class TelegramBotController extends Controller
      */
     public function sendMessageToUser(Request $request)
     {
+
+
         $request->validate([
             'user_id' => 'required|exists:telegram_users,id',
-            'message' => 'required|string|max:4096'
+            'message' => 'required|string|max:4096',
+            'image' => 'nullable|image|mimes:jpeg,png,gif,webp|max:5120',
+            'keyboard' => 'nullable|string'
         ]);
 
-        $success = $this->messageService->sendMessageToUser(
+        // 解析键盘数据
+        $keyboard = null;
+        if ($request->has('keyboard') && !empty($request->keyboard)) {
+            $keyboard = json_decode($request->keyboard, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $keyboard = null;
+            }
+        }
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imagePath = Storage::putFileAs('telegram/user-messages', $image, $image->getClientOriginalName());
+        }
+
+        $result = $this->messageService->sendMessageToUser(
             $request->user_id,
-            $request->message
+            $request->message,
+            [
+                'image_path' => $imagePath,
+                'keyboard' => $keyboard
+            ]
         );
 
         if ($request->header('X-Inertia')) {
             // Inertia 请求：返回重定向 + 闪存
             return back()->with(
-                $success
-                    ? ['success' => '消息已加入发送队列']
-                    : ['error' => '发送失败，请检查用户ID']
+                $result['success']
+                    ? ['success' => '消息发送成功']
+                    : ['error' => '消息发送失败: ' . $result['error']]
             );
         }
 
         // 非 Inertia：返回 JSON
-        if ($success) {
-            return response()->json(['success' => true, 'message' => '消息已加入发送队列']);
-        }
-        return response()->json(['success' => false, 'message' => '发送失败，请检查用户ID'], 400);
+        return response()->json($result);
     }
 
     /**

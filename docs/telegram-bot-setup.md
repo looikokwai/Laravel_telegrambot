@@ -1,262 +1,162 @@
-# Telegram Bot 项目设置指南
+# Telegram Bot 设置指南
 
-## SERVER SETTING
-location / {
-try_files $uri $uri/ /index.php?$query_string;
-}
+## 📋 **环境配置**
 
-mbstring
-fileinfo
-putenv
-pcntl_signal
-pcntl_signal_dispatch 
-proc_open 
+### 必需的环境变量
 
-## 📋 目录
-- [环境配置](#环境配置)
-- [项目安装](#项目安装)
-- [启动服务](#启动服务)
-- [功能测试](#功能测试)
-- [API 使用](#api-使用)
-- [常见问题](#常见问题)
+在您的 `.env` 文件中添加以下配置：
 
-## 🔧 环境配置
-
-### 1. 获取 Bot Token
-1. 在 Telegram 中找到 [@BotFather](https://t.me/botfather)
-2. 发送 `/newbot` 创建新 Bot
-3. 按提示设置 Bot 名称和用户名
-4. 获取 Bot Token 并保存
-
-### 2. 配置环境变量
-在 `.env` 文件中添加：
 ```env
-TELEGRAM_BOT_TOKEN=你的Bot_Token
+# Telegram Bot 配置
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_BOT_ID=your_bot_id_here
+TELEGRAM_WEBHOOK_URL=https://yourdomain.com/telegram/webhook
 ```
 
-## ⚡ 项目安装
+### 🔧 **获取 Bot ID**
 
-### 1. 安装依赖
+如果您不知道您的 Bot ID，可以使用以下命令获取：
+
 ```bash
-# 安装项目依赖
-composer install
-
-# 安装 Telegram Bot SDK
-composer require irazasyed/telegram-bot-sdk
-
-# 发布配置文件
-php artisan vendor:publish --tag=telegram-config
+php artisan telegram:get-bot-id
 ```
 
-### 2. 数据库迁移
-```bash
-# 运行所有迁移（包括 telegram_users, broadcast_messages 等表）
-php artisan migrate
+这个命令会：
+- 连接到 Telegram API
+- 获取您的 Bot 信息
+- 显示 Bot ID 和其他详细信息
+- 提供正确的配置格式
 
-# 包含seeder
-php artisan migrate --seed
+### ⚠️ **常见错误解决**
 
-php artisan migrate:fresh --seed
-```
+#### 1. "Bad Request: invalid user_id specified" 错误
 
-### 3. 设置 Webhook
-```bash
-# 自动使用 APP_URL 设置 webhook
-php artisan telegram:set-webhook
+**原因**：Bot ID 未配置或配置错误
 
-# 或指定自定义 URL
-php artisan telegram:set-webhook https://yourdomain.com/telegram/webhook
-```
+**解决方案**：
+1. 运行 `php artisan telegram:get-bot-id` 获取正确的 Bot ID
+2. 在 `.env` 文件中添加 `TELEGRAM_BOT_ID=your_bot_id`
+3. 清除配置缓存：`php artisan config:clear`
 
-## 🚀 启动服务
+#### 2. "Bot 不是频道管理员" 错误
 
-### 1. 启动队列处理器
-```bash
-# 启动单个队列工作进程
-php artisan queue:work
+**原因**：Bot 没有被添加为频道管理员
 
-# 启动多个 worker 进程（推荐用于生产环境）
-# 终端1
-php artisan queue:work
+**解决方案**：
+1. 将 Bot 添加到目标频道
+2. 确保 Bot 具有管理员权限
+3. 确保 Bot 具有发布消息权限
 
-# 终端2
-php artisan queue:work
+#### 3. "Bot 不是群组成员" 错误
 
-# 终端3
-php artisan queue:work
-```
+**原因**：Bot 没有被添加到群组
 
-## 🧪 功能测试
+**解决方案**：
+1. 将 Bot 添加到目标群组
+2. 确保 Bot 具有发送消息权限
 
-### 1. 测试 Bot 基本功能
-1. **找到你的 Bot**
-   - 在 Telegram 搜索你的 Bot 用户名
-   - 点击开始对话
+#### 4. "Argument #1 ($member) must be of type array, Telegram\Bot\Objects\ChatMember given" 错误
 
-2. **测试基本命令**
-   ```
-   /start    - 测试欢迎消息
-   ```
+**原因**：Telegram SDK 返回的是对象而不是数组
 
-3. **检查用户保存**
-   ```bash
-   # 查看保存的用户信息
-   php artisan tinker
-   >>> App\Models\TelegramUser::all()
-   ```
+**解决方案**：
+1. 确保已更新到最新版本的代码
+2. 清除配置缓存：`php artisan config:clear`
+3. 重启队列处理器：`php artisan queue:restart`
 
-### 2. 测试广播消息功能
-1. **访问广播页面**
-   - 打开 `http://yourdomain.com/telegram/broadcast`
-   - 或本地开发：`http://localhost:8000/telegram/broadcast`
+#### 5. 其他 Telegram API 错误
 
-2. **发送测试广播**
-   - 选择目标用户（活跃用户、所有用户等）
-   - 输入消息内容
-   - 点击发送
-
-3. **查看广播历史**
-   - 点击"广播历史"标签
-   - 查看发送状态和统计
-
-### 3. 测试用户管理
-1. **访问用户管理页面**
-   - 打开 `http://yourdomain.com/telegram/users`
-
-2. **查看用户列表**
-   - 查看所有 Telegram 用户
-   - 检查用户状态（活跃/非活跃）
-
-## 🔌 API 使用
-
-### 1. 广播消息 API
-```bash
-POST /telegram/broadcast
-Content-Type: application/json
-
-{
-    "message": "广播消息内容",
-    "target": "active",  // all, active, recent, recent_30
-    "image": "图片文件（可选）",
-    "keyboard": "键盘配置（可选）"
-}
-```
-
-### 2. 发送消息给特定用户
-```bash
-POST /telegram/send-message
-Content-Type: application/json
-
-{
-    "user_id": 1,
-    "message": "消息内容"
-}
-```
-
-### 3. 获取用户列表
-```bash
-GET /telegram/users/data?per_page=20&search=用户名
-```
-
-### 4. 获取广播统计
-```bash
-GET /telegram/broadcast-stats
-```
-
-## ❓ 常见问题
-
-### Q: 广播消息显示"发送给 0 个用户"
-**A:** 检查以下几点：
-- 数据库中是否有用户数据
-- 用户状态是否为活跃
-- 目标用户选择是否正确
-
-### Q: 消息发送失败
-**A:** 可能原因：
-- Bot Token 错误
-- 用户阻止了 Bot
-- 队列处理器未运行
+**常见原因**：
+- Bot Token 无效或过期
 - 网络连接问题
+- API 限制或配额超限
 
-### Q: 队列消息堆积
-**A:** 解决方法：
+**解决方案**：
+1. 检查 Bot Token 是否正确
+2. 检查网络连接
+3. 查看 Telegram API 状态
+4. 检查日志文件获取详细错误信息
+
+## 🚀 **快速开始**
+
+1. **配置环境变量**
+   ```bash
+   # 复制环境配置文件
+   cp .env.example .env
+   
+   # 编辑配置文件
+   nano .env
+   ```
+
+2. **获取 Bot 信息**
+   ```bash
+   php artisan telegram:get-bot-id
+   ```
+
+3. **设置 Webhook**
+   ```bash
+   php artisan telegram:set-webhook
+   ```
+
+4. **运行迁移**
+   ```bash
+   php artisan migrate
+   ```
+
+5. **启动队列处理器**
+   ```bash
+   php artisan queue:work
+   ```
+
+## 📝 **配置验证**
+
+运行以下命令验证配置是否正确：
+
 ```bash
-# 清空失败的队列任务
-php artisan queue:flush
+# 验证 Bot 配置
+php artisan telegram:get-bot-id
 
-# 重启队列处理器
-php artisan queue:restart
+# 验证 Webhook 设置
+php artisan telegram:get-webhook-info
 
-# 查看失败任务
-php artisan queue:failed
+# 测试 Bot 连接
+php artisan telegram:test-connection
 ```
 
-### Q: 广播统计不准确
-**A:** 检查：
-- 队列处理器是否正常运行
-- 重试机制是否正常工作
-- 缓存是否影响统计
+## 🔍 **故障排除**
 
-### Q: 多 Worker 配置
-**A:** 推荐配置：
-- 开发环境：2-3 个 worker
-- 生产环境：3-5 个 worker
-- 使用 PM2 或 Supervisor 管理
+### 检查日志文件
 
-## 📊 监控和日志
+如果遇到问题，请检查以下日志文件：
 
-### 查看队列状态
 ```bash
-# 查看队列任务
-php artisan queue:monitor
+# Laravel 日志
+tail -f storage/logs/laravel.log
 
-# 查看失败任务
-php artisan queue:failed
-
-# 重试失败任务
-php artisan queue:retry all
+# Telegram 相关日志
+tail -f storage/logs/telegram.log
 ```
 
-### 日志文件位置
-- Laravel 日志: `storage/logs/laravel.log`
-- Telegram 相关日志会标记为 `Telegram webhook` 或 `Telegram message`
+### 常见问题
 
-### 性能优化建议
-```bash
-# 使用多个队列工作进程
-php artisan queue:work --queue=default --processes=3
+1. **Bot Token 无效**
+   - 检查 Token 是否正确
+   - 确保没有多余的空格或字符
 
-# 设置内存限制
-php artisan queue:work --memory=512
+2. **Webhook 设置失败**
+   - 确保域名可以公网访问
+   - 检查 SSL 证书是否有效
+   - 确保 Webhook URL 路径正确
 
-# 设置超时时间
-php artisan queue:work --timeout=60
-```
+3. **权限问题**
+   - 确保 Bot 在频道/群组中具有适当权限
+   - 检查 Bot 是否被管理员移除
 
-## 🔐 安全建议
+## 📞 **获取帮助**
 
-1. **保护 Webhook 端点**
-   - 确保使用 HTTPS
-   - 验证请求来源
+如果遇到其他问题，请：
 
-2. **Token 安全**
-   - 不要在代码中硬编码 Token
-   - 使用环境变量存储
-
-3. **用户数据保护**
-   - 遵循数据保护法规
-   - 提供数据删除功能
-
----
-
-## 📞 技术支持
-
-如遇到问题，请检查：
-1. Laravel 日志文件
-2. 队列处理器状态
-3. Telegram API 响应
-4. 网络连接状态
-
-更多信息请参考：
-- [Telegram Bot API 官方文档](https://core.telegram.org/bots/api)
-- [Laravel 队列文档](https://laravel.com/docs/queues)
+1. 检查日志文件获取详细错误信息
+2. 运行诊断命令：`php artisan telegram:diagnose`
+3. 查看 Telegram Bot API 文档
+4. 联系技术支持

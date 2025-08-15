@@ -82,6 +82,30 @@ export default function AppLayout({ children, className = "" }) {
                     current: currentUrl === "/telegram/broadcast",
                 },
                 {
+                    name: t('navigation.groupManagement'),
+                    href: "/telegram/group-management",
+                    icon: <FaUsers className="w-4 h-4" />,
+                    current: currentUrl === "/telegram/group-management",
+                },
+                {
+                    name: t('navigation.groupBroadcast'),
+                    href: "/telegram/group-broadcast",
+                    icon: <FaBroadcastTower className="w-4 h-4" />,
+                    current: currentUrl === "/telegram/group-broadcast",
+                },
+                {
+                    name: t('navigation.channelManagement'),
+                    href: "/telegram/channel-management",
+                    icon: <FaUsers className="w-4 h-4" />,
+                    current: currentUrl === "/telegram/channel-management",
+                },
+                {
+                    name: t('navigation.channelBroadcast'),
+                    href: "/telegram/channel-broadcast",
+                    icon: <FaBroadcastTower className="w-4 h-4" />,
+                    current: currentUrl === "/telegram/channel-broadcast",
+                },
+                {
                     name: t('navigation.menuManagement'),
                     href: "/telegram/menu-management",
                     icon: <FaList className="w-4 h-4" />,

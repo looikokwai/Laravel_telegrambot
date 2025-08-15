@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Models\TelegramUser;
 use App\Models\TelegramMenuItem;
+use App\Models\TelegramUserMessage;
 use App\Jobs\SendTelegramMessage;
 use App\Services\Telegram\Commands\TelegramCommandFactory;
 use App\Services\Telegram\Commands\StartCommand;
 use App\Services\Telegram\CallbackRouter;
 use Telegram\Bot\Laravel\Facades\Telegram;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TelegramMessageService
 {
@@ -338,20 +340,108 @@ class TelegramMessageService
     /**
      * 发送消息给特定用户
      */
-    public function sendMessageToUser(int $userId, string $message): bool
+    public function sendMessageToUser(int $userId, string $message, array $options = []): array
     {
         try {
             $telegramUser = TelegramUser::find($userId);
 
             if (!$telegramUser) {
-                return false;
+                return [
+                    'success' => false,
+                    'error' => '用户不存在',
+                    'code' => 'USER_NOT_FOUND'
+                ];
             }
 
-            SendTelegramMessage::dispatch($telegramUser->chat_id, $message, [], null, null);
-            return true;
+            if (!$telegramUser->is_active) {
+                return [
+                    'success' => false,
+                    'error' => '用户已停用',
+                    'code' => 'USER_INACTIVE'
+                ];
+            }
+
+            // 创建用户消息记录
+            $messageRecord = TelegramUserMessage::create([
+                'user_id' => $userId,
+                'message_text' => $message,
+                'image_path' => $options['image_path'] ?? null,
+                'keyboard' => $options['keyboard'] ?? null,
+                'sent_by' => 'admin',
+                'status' => 'pending'
+            ]);
+
+            // 直接发送消息（不通过队列）
+            if (!empty($options['image_path'])) {
+                // 发送带图片的消息
+                $imagePath = \Illuminate\Support\Facades\Storage::path($options['image_path']);
+                $params = [
+                    'chat_id' => $telegramUser->chat_id,
+                    'photo' => \Telegram\Bot\FileUpload\InputFile::create($imagePath),
+                    'caption' => $message,
+                    'parse_mode' => 'HTML'
+                ];
+
+                if (!empty($options['keyboard'])) {
+                    // 转换键盘格式为 Telegram 内联键盘格式
+                    $inlineKeyboard = $this->formatInlineKeyboard($options['keyboard']);
+                    if (!empty($inlineKeyboard)) {
+                        $params['reply_markup'] = json_encode([
+                            'inline_keyboard' => $inlineKeyboard
+                        ]);
+                    }
+                }
+
+                $response = Telegram::sendPhoto($params);
+            } else {
+                // 发送纯文本消息
+                $params = [
+                    'chat_id' => $telegramUser->chat_id,
+                    'text' => $message,
+                    'parse_mode' => 'HTML'
+                ];
+
+                if (!empty($options['keyboard'])) {
+                    // 转换键盘格式为 Telegram 内联键盘格式
+                    $inlineKeyboard = $this->formatInlineKeyboard($options['keyboard']);
+                    if (!empty($inlineKeyboard)) {
+                        $params['reply_markup'] = json_encode([
+                            'inline_keyboard' => $inlineKeyboard
+                        ]);
+                    }
+                }
+
+                $response = Telegram::sendMessage($params);
+            }
+
+            // 更新消息记录
+            $messageRecord->markAsSent($response['message_id']);
+
+            // 更新用户最后交互时间
+            $telegramUser->update(['last_interaction' => now()]);
+
+            return [
+                'success' => true,
+                'message_id' => $response['message_id'],
+                'message_record' => $messageRecord
+            ];
+
         } catch (\Exception $e) {
-            Log::error('Failed to send message to user: ' . $e->getMessage());
-            return false;
+            Log::error('Failed to send message to user: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'message' => $message,
+                'error' => $e
+            ]);
+
+            if (isset($messageRecord)) {
+                $messageRecord->markAsFailed($e->getMessage());
+            }
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'code' => 'SEND_FAILED'
+            ];
         }
     }
 
@@ -404,6 +494,47 @@ class TelegramMessageService
                 'text' => $text
             ]);
         }
+    }
+
+    /**
+     * 格式化内联键盘为 Telegram 格式
+     */
+    private function formatInlineKeyboard(array $keyboard): array
+    {
+        if (empty($keyboard)) {
+            return [];
+        }
+
+        $inlineKeyboard = [];
+        
+        foreach ($keyboard as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            
+            $keyboardRow = [];
+            foreach ($row as $button) {
+                if (!is_array($button) || empty($button['text'])) {
+                    continue;
+                }
+                
+                $inlineButton = ['text' => $button['text']];
+                
+                if (!empty($button['url'])) {
+                    $inlineButton['url'] = $button['url'];
+                } elseif (!empty($button['callback_data'])) {
+                    $inlineButton['callback_data'] = $button['callback_data'];
+                }
+                
+                $keyboardRow[] = $inlineButton;
+            }
+            
+            if (!empty($keyboardRow)) {
+                $inlineKeyboard[] = $keyboardRow;
+            }
+        }
+        
+        return $inlineKeyboard;
     }
 
     // 旧的回调处理方法已被CallbackRouter替代

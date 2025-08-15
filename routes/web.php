@@ -7,6 +7,8 @@ use App\Http\Controllers\TelegramBotController;
 use App\Http\Controllers\TelegramMenuController;
 use App\Http\Controllers\TelegramImageController;
 use App\Http\Controllers\TelegramLanguageController;
+use App\Http\Controllers\TelegramGroupController;
+use App\Http\Controllers\TelegramChannelController;
 use Illuminate\Support\Facades\Log;
 
 /*
@@ -103,6 +105,18 @@ Route::middleware('auth')->group(function () {
     // 语言管理页面
     Route::get('/telegram/language-management', [TelegramLanguageController::class, 'index'])->name('telegram.language.page');
 
+    // 群组管理页面
+    Route::get('/telegram/group-management', [TelegramGroupController::class, 'index'])->name('telegram.group.page');
+
+    // 群组广播页面
+    Route::get('/telegram/group-broadcast', [TelegramGroupController::class, 'broadcastPage'])->name('telegram.group.broadcast.page');
+
+    // 频道管理页面
+    Route::get('/telegram/channel-management', [TelegramChannelController::class, 'index'])->name('telegram.channel.page');
+
+    // 频道广播页面
+    Route::get('/telegram/channel-broadcast', [TelegramChannelController::class, 'broadcastPage'])->name('telegram.channel.broadcast.page');
+
     /*
     |----------------------------------------------------------------------
     | Telegram API 路由
@@ -113,6 +127,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/telegram/send-message', [TelegramBotController::class, 'sendMessageToUser'])->name('telegram.send-message');
     Route::post('/telegram/broadcast', [TelegramBotController::class, 'broadcastMessage'])->name('telegram.broadcast');
     Route::get('/telegram/broadcast-stats', [TelegramBotController::class, 'getBroadcastStats'])->name('telegram.broadcast-stats');
+
+    // 群组广播 API
+    Route::post('/telegram/group-broadcast', [TelegramGroupController::class, 'broadcastMessage'])->name('telegram.group.broadcast');
+    Route::get('/telegram/group-broadcast-stats', [TelegramGroupController::class, 'getBroadcastStats'])->name('telegram.group.broadcast-stats');
+
+    // 频道广播 API
+    Route::post('/telegram/channel-broadcast', [TelegramChannelController::class, 'broadcastMessage'])->name('telegram.channel.broadcast');
+    Route::get('/telegram/channel-broadcast-stats', [TelegramChannelController::class, 'getBroadcastStats'])->name('telegram.channel.broadcast-stats');
 
     // 用户管理 API
     Route::get('/telegram/users/data', [TelegramBotController::class, 'getUsers'])->name('telegram.users.data');
@@ -199,5 +221,45 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{language}', [TelegramLanguageController::class, 'destroy'])->name('destroy');
         Route::post('/{language}/set-default', [TelegramLanguageController::class, 'setDefault'])->name('set-default');
         Route::post('/{language}/toggle-status', [TelegramLanguageController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+    // 群组管理
+    Route::prefix('telegram/groups')->name('telegram.groups.')->group(function () {
+        // 基础 CRUD
+        Route::get('/', [TelegramGroupController::class, 'index'])->name('index');
+        Route::post('/', [TelegramGroupController::class, 'store'])->name('store');
+        Route::put('/{group}', [TelegramGroupController::class, 'update'])->name('update');
+        Route::delete('/{group}', [TelegramGroupController::class, 'destroy'])->name('destroy');
+
+        // 群组操作
+        Route::post('/{group}/send-message', [TelegramGroupController::class, 'sendMessage'])->name('send-message');
+        Route::get('/{group}/stats', [TelegramGroupController::class, 'getStats'])->name('stats');
+        Route::put('/{group}/toggle-status', [TelegramGroupController::class, 'toggleStatus'])->name('toggle-status');
+
+        // 权限验证
+        Route::post('/validate-permission', [TelegramGroupController::class, 'validatePermission'])->name('validate-permission');
+
+        // API 端点
+        Route::get('/api/list', [TelegramGroupController::class, 'getGroups'])->name('api.list');
+    });
+
+    // 频道管理
+    Route::prefix('telegram/channels')->name('telegram.channels.')->group(function () {
+        // 基础 CRUD
+        Route::get('/', [TelegramChannelController::class, 'index'])->name('index');
+        Route::post('/', [TelegramChannelController::class, 'store'])->name('store');
+        Route::put('/{channel}', [TelegramChannelController::class, 'update'])->name('update');
+        Route::delete('/{channel}', [TelegramChannelController::class, 'destroy'])->name('destroy');
+
+        // 频道操作
+        Route::post('/{channel}/publish-message', [TelegramChannelController::class, 'publishMessage'])->name('publish-message');
+        Route::get('/{channel}/stats', [TelegramChannelController::class, 'getStats'])->name('stats');
+        Route::put('/{channel}/toggle-status', [TelegramChannelController::class, 'toggleStatus'])->name('toggle-status');
+
+        // 权限验证
+        Route::post('/validate-permission', [TelegramChannelController::class, 'validatePermission'])->name('validate-permission');
+
+        // API 端点
+        Route::get('/api/list', [TelegramChannelController::class, 'getChannels'])->name('api.list');
     });
 });
