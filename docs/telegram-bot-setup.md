@@ -1,5 +1,17 @@
 # Telegram Bot 项目设置指南
 
+## SERVER SETTING
+location / {
+try_files $uri $uri/ /index.php?$query_string;
+}
+
+mbstring
+fileinfo
+putenv
+pcntl_signal
+pcntl_signal_dispatch 
+proc_open 
+
 ## 📋 目录
 - [环境配置](#环境配置)
 - [项目安装](#项目安装)
@@ -43,6 +55,8 @@ php artisan migrate
 
 # 包含seeder
 php artisan migrate --seed
+
+php artisan migrate:fresh --seed
 ```
 
 ### 3. 设置 Webhook

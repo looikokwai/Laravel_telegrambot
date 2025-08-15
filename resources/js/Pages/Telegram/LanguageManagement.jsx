@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { Button, Card, Input, Select, Modal, Textarea } from '@/Components/UI';
-import ImageSelector from '@/Components/ImageSelector';
+import React, { useState, useEffect } from "react";
+import { Head, router } from "@inertiajs/react";
+import { Button, Card, Input, Select, Modal, Textarea } from "@/Components/UI";
+import ImageSelector from "@/Components/ImageSelector";
+import { useTranslation } from "react-i18next";
 import {
     FaPlus,
     FaEdit,
@@ -20,9 +21,9 @@ import {
     FaSync,
     FaEye,
     FaEyeSlash,
-    FaSort
-} from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
+    FaSort,
+} from "react-icons/fa";
+import { toast } from "react-hot-toast";
 import {
     DndContext,
     closestCenter,
@@ -30,20 +31,28 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
     arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-    useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // SortableItem 组件
-function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, handleToggleStatus, handleSetDefault, handleEdit, handleDelete }) {
+function SortableItem({
+    id,
+    language,
+    selectedLanguages,
+    setSelectedLanguages,
+    handleToggleStatus,
+    handleSetDefault,
+    handleEdit,
+    handleDelete,
+}) {
+    const { t } = useTranslation();
     const {
         attributes,
         listeners,
@@ -63,7 +72,7 @@ function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, h
             ref={setNodeRef}
             style={style}
             className={`border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow ${
-                isDragging ? 'shadow-lg opacity-50' : ''
+                isDragging ? "shadow-lg opacity-50" : ""
             }`}
         >
             <div className="flex items-center justify-between">
@@ -96,7 +105,7 @@ function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, h
                     {/* 语言信息 */}
                     <div className="flex items-center space-x-3">
                         <div className="text-2xl">
-                            {language.flag_emoji || '🌐'}
+                            {language.flag_emoji || "🌐"}
                         </div>
                         <div>
                             <div className="flex items-center space-x-2">
@@ -109,12 +118,12 @@ function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, h
                                 {language.is_default && (
                                     <span className="inline-flex items-center px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
                                         <FaStar className="mr-1" />
-                                        默认
+                                        {t("telegram.languages.default")}
                                     </span>
                                 )}
                                 {language.is_rtl && (
                                     <span className="inline-flex items-center px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
-                                        RTL
+                                        {t("telegram.languages.rtl")}
                                     </span>
                                 )}
                             </div>
@@ -122,28 +131,41 @@ function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, h
                                 {language.native_name}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
-                                翻译数: {language.translations_count || 0} |
-                                排序: {language.sort_order}
+                                {t("telegram.languages.sortOrderLabel")} {language.sort_order}
                             </div>
                             {/* 语言选择设置信息 */}
-                            {(language.selection_title || language.selection_prompt || language.selection_image) && (
+                            {(language.selection_title ||
+                                language.selection_prompt ||
+                                language.selection_image) && (
                                 <div className="text-xs text-gray-400 mt-1 space-y-1">
                                     {language.selection_title && (
                                         <div className="flex items-center space-x-1">
-                                            <span className="font-medium">选择标题:</span>
-                                            <span className="truncate max-w-32">{language.selection_title}</span>
+                                            <span className="font-medium">
+                                                {t("telegram.languages.selectionTitleLabel")}
+                                            </span>
+                                            <span className="truncate max-w-32">
+                                                {language.selection_title}
+                                            </span>
                                         </div>
                                     )}
                                     {language.selection_prompt && (
                                         <div className="flex items-center space-x-1">
-                                            <span className="font-medium">选择提示:</span>
-                                            <span className="truncate max-w-32">{language.selection_prompt}</span>
+                                            <span className="font-medium">
+                                                {t("telegram.languages.selectionPromptLabel")}
+                                            </span>
+                                            <span className="truncate max-w-32">
+                                                {language.selection_prompt}
+                                            </span>
                                         </div>
                                     )}
                                     {language.selection_image && (
                                         <div className="flex items-center space-x-1">
-                                            <span className="font-medium">选择图片:</span>
-                                            <span className="text-blue-500">已设置</span>
+                                            <span className="font-medium">
+                                                {t("telegram.languages.selectionImageLabel")}
+                                            </span>
+                                            <span className="text-blue-500">
+                                                {t("telegram.languages.selectionImageSet")}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -156,13 +178,19 @@ function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, h
                 <div className="flex items-center space-x-2">
                     {/* 状态切换 */}
                     <button
-                        onClick={() => handleToggleStatus(language.id, language.is_active)}
+                        onClick={() =>
+                            handleToggleStatus(language.id, language.is_active)
+                        }
                         className={`p-2 rounded-full ${
                             language.is_active
-                                ? 'text-green-600 hover:bg-green-50'
-                                : 'text-gray-400 hover:bg-gray-50'
+                                ? "text-green-600 hover:bg-green-50"
+                                : "text-gray-400 hover:bg-gray-50"
                         }`}
-                        title={language.is_active ? '禁用语言' : '启用语言'}
+                        title={
+                            language.is_active
+                                ? t("telegram.languages.disableLanguage")
+                                : t("telegram.languages.enableLanguage")
+                        }
                     >
                         {language.is_active ? <FaEye /> : <FaEyeSlash />}
                     </button>
@@ -172,7 +200,7 @@ function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, h
                         <button
                             onClick={() => handleSetDefault(language.id)}
                             className="p-2 rounded-full text-yellow-600 hover:bg-yellow-50"
-                            title="设为默认语言"
+                            title={t("telegram.languages.setAsDefault")}
                         >
                             <FaRegStar />
                         </button>
@@ -182,7 +210,7 @@ function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, h
                     <button
                         onClick={() => handleEdit(language)}
                         className="p-2 rounded-full text-blue-600 hover:bg-blue-50"
-                        title="编辑语言"
+                        title={t("telegram.languages.editLanguage")}
                     >
                         <FaEdit />
                     </button>
@@ -192,7 +220,7 @@ function SortableItem({ id, language, selectedLanguages, setSelectedLanguages, h
                         <button
                             onClick={() => handleDelete(language.id)}
                             className="p-2 rounded-full text-red-600 hover:bg-red-50"
-                            title="删除语言"
+                            title={t("telegram.languages.deleteLanguage")}
                         >
                             <FaTrash />
                         </button>
@@ -209,8 +237,9 @@ export default function LanguageManagement({
     stats = {},
     filters = {},
     flash = {},
-    availableImages = []
+    availableImages = [],
 }) {
+    const { t } = useTranslation();
     const [selectedLanguages, setSelectedLanguages] = useState(new Set());
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -218,43 +247,43 @@ export default function LanguageManagement({
     const [showImportModal, setShowImportModal] = useState(false);
     const [editingLanguage, setEditingLanguage] = useState(null);
     const [translatingMenuItem, setTranslatingMenuItem] = useState(null);
-    const [searchTerm, setSearchTerm] = useState(filters.search || '');
-    const [statusFilter, setStatusFilter] = useState(filters.status || '');
+    const [searchTerm, setSearchTerm] = useState(filters.search || "");
+    const [statusFilter, setStatusFilter] = useState(filters.status || "");
 
     // 调试信息
-    console.log('filters:', filters);
-    console.log('statusFilter:', statusFilter);
+    console.log("filters:", filters);
+    console.log("statusFilter:", statusFilter);
     const [formData, setFormData] = useState({
-        code: '',
-        name: '',
-        native_name: '',
-        flag_emoji: '',
+        code: "",
+        name: "",
+        native_name: "",
+        flag_emoji: "",
         is_rtl: false,
         is_active: true,
         is_default: false,
-        selection_title: '',
-        selection_prompt: '',
-        selection_image_id: '',
-        back_label: ''
+        selection_title: "",
+        selection_prompt: "",
+        selection_image_id: "",
+        back_label: "",
     });
     const [translations, setTranslations] = useState({});
-    const [importData, setImportData] = useState('');
+    const [importData, setImportData] = useState("");
     const [missingTranslations, setMissingTranslations] = useState([]);
 
     // 重置表单
     const resetForm = () => {
         setFormData({
-            code: '',
-            name: '',
-            native_name: '',
-            flag_emoji: '',
+            code: "",
+            name: "",
+            native_name: "",
+            flag_emoji: "",
             is_rtl: false,
             is_active: true,
             is_default: false,
             selection_title: null,
             selection_prompt: null,
             selection_image_id: null,
-            back_label: ''
+            back_label: "",
         });
     };
 
@@ -270,15 +299,15 @@ export default function LanguageManagement({
         setFormData({
             code: language.code,
             name: language.name,
-            native_name: language.native_name || '',
-            flag_emoji: language.flag_emoji || '',
+            native_name: language.native_name || "",
+            flag_emoji: language.flag_emoji || "",
             is_rtl: language.is_rtl,
             is_active: language.is_active,
             is_default: language.is_default,
-            selection_title: language.selection_title || '',
-            selection_prompt: language.selection_prompt || '',
-            selection_image_id: language.selection_image?.id || '',
-            back_label: language.back_label || ''
+            selection_title: language.selection_title || "",
+            selection_prompt: language.selection_prompt || "",
+            selection_image_id: language.selection_image?.id || "",
+            back_label: language.back_label || "",
         });
         setShowEditModal(true);
     };
@@ -289,9 +318,9 @@ export default function LanguageManagement({
 
         const url = editingLanguage
             ? `/telegram/languages/${editingLanguage.id}`
-            : '/telegram/languages';
+            : "/telegram/languages";
 
-        const method = editingLanguage ? 'put' : 'post';
+        const method = editingLanguage ? "put" : "post";
 
         router[method](url, formData, {
             onSuccess: () => {
@@ -299,52 +328,60 @@ export default function LanguageManagement({
                 setShowEditModal(false);
                 resetForm();
                 setEditingLanguage(null);
-                router.reload({ only: ['languages', 'stats'] });
+                router.reload({ only: ["languages", "stats"] });
             },
             onError: (errors) => {
-                Object.values(errors).forEach(error => {
+                Object.values(errors).forEach((error) => {
                     toast.error(error);
                 });
-            }
+            },
         });
     };
 
     // 处理删除语言
     const handleDelete = (languageId) => {
-        if (confirm('确定要删除这个语言吗？这将同时删除所有相关的翻译。')) {
+        if (confirm(t("telegram.languages.deleteConfirmation"))) {
             router.delete(`/telegram/languages/${languageId}`, {
                 onSuccess: () => {
-                    router.reload({ only: ['languages', 'stats'] });
+                    router.reload({ only: ["languages", "stats"] });
                 },
                 onError: () => {
-                    toast.error('删除失败');
-                }
+                    toast.error(t("telegram.languages.deleteFailed"));
+                },
             });
         }
     };
 
     // 处理设置默认语言
     const handleSetDefault = (languageId) => {
-        router.post(`/telegram/languages/${languageId}/set-default`, {}, {
-            onSuccess: () => {
-                router.reload({ only: ['languages', 'stats'] });
-            },
-            onError: () => {
-                toast.error('设置失败');
+        router.post(
+            `/telegram/languages/${languageId}/set-default`,
+            {},
+            {
+                onSuccess: () => {
+                    router.reload({ only: ["languages", "stats"] });
+                },
+                onError: () => {
+                    toast.error(t("telegram.languages.setDefaultFailed"));
+                },
             }
-        });
+        );
     };
 
     // 处理切换语言状态
     const handleToggleStatus = (languageId, currentStatus) => {
-        router.post(`/telegram/languages/${languageId}/toggle-status`, {}, {
-            onSuccess: () => {
-                router.reload({ only: ['languages', 'stats'] });
-            },
-            onError: () => {
-                toast.error('状态更新失败');
+        router.post(
+            `/telegram/languages/${languageId}/toggle-status`,
+            {},
+            {
+                onSuccess: () => {
+                    router.reload({ only: ["languages", "stats"] });
+                },
+                onError: () => {
+                    toast.error(t("telegram.languages.statusUpdateFailed"));
+                },
             }
-        });
+        );
     };
 
     // 全选/取消全选
@@ -352,47 +389,54 @@ export default function LanguageManagement({
         if (selectedLanguages.size === languages.length) {
             setSelectedLanguages(new Set());
         } else {
-            setSelectedLanguages(new Set(languages.map(lang => lang.id)));
+            setSelectedLanguages(new Set(languages.map((lang) => lang.id)));
         }
     };
 
     // 处理导出语言数据
     const handleExport = () => {
-        window.location.href = '/telegram/languages/export';
+        window.location.href = "/telegram/languages/export";
     };
 
     // 处理搜索
     const handleSearch = () => {
-        router.post('/telegram/languages/filter', {
-            search: searchTerm,
-            status: statusFilter
-        }, {
-            onSuccess: (page) => {
-                // 筛选成功，数据会自动更新
+        router.post(
+            "/telegram/languages/filter",
+            {
+                search: searchTerm,
+                status: statusFilter,
             },
-            onError: (errors) => {
-                toast.error('筛选失败');
-            },
-            preserveState: true,
-            preserveScroll: true
-        });
+            {
+                onSuccess: (page) => {
+                    // 筛选成功，数据会自动更新
+                },
+                onError: (errors) => {
+                    toast.error(t("telegram.languages.filterFailed"));
+                },
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    };
+    // 处理管理翻译
+    const handleManageTranslations = (menuItem) => {
+        setTranslatingMenuItem(menuItem);
+        setShowTranslationModal(true);
     };
 
-    // 处理获取缺失翻译
-    const handleGetMissingTranslations = () => {
-        router.get('/telegram/languages/missing-translations', {}, {
-            onSuccess: (page) => {
-                setMissingTranslations(page.props.missingTranslations || []);
-                if (page.props.missingTranslations?.length > 0) {
-                    toast.success(`发现 ${page.props.missingTranslations.length} 个缺失翻译`);
-                } else {
-                    toast.success('所有翻译都已完整');
-                }
-            },
-            onError: () => {
-                toast.error('检查失败');
-            }
-        });
+    // 处理保存翻译
+    const handleSaveTranslations = () => {
+        // 这里可以添加保存翻译的逻辑
+        setShowTranslationModal(false);
+        setTranslatingMenuItem(null);
+        setTranslations({});
+    };
+
+    // 处理导入
+    const handleImport = () => {
+        // 这里可以添加导入逻辑
+        setShowImportModal(false);
+        setImportData("");
     };
 
     // 处理拖拽结束
@@ -400,27 +444,33 @@ export default function LanguageManagement({
         const { active, over } = event;
 
         if (active.id !== over.id) {
-            const oldIndex = languages.findIndex(lang => lang.id === active.id);
-            const newIndex = languages.findIndex(lang => lang.id === over.id);
+            const oldIndex = languages.findIndex(
+                (lang) => lang.id === active.id
+            );
+            const newIndex = languages.findIndex((lang) => lang.id === over.id);
 
             const newLanguages = arrayMove(languages, oldIndex, newIndex);
 
             // 更新排序
             const updateData = newLanguages.map((lang, index) => ({
                 id: lang.id,
-                sort_order: index + 1
+                sort_order: index + 1,
             }));
 
-            router.post('/telegram/languages/reorder', {
-                languages: updateData
-            }, {
-                onSuccess: () => {
-                    router.reload({ only: ['languages'] });
+            router.post(
+                "/telegram/languages/reorder",
+                {
+                    languages: updateData,
                 },
-                onError: () => {
-                    toast.error('排序更新失败');
+                {
+                    onSuccess: () => {
+                        router.reload({ only: ["languages"] });
+                    },
+                    onError: () => {
+                        toast.error(t("telegram.languages.sortUpdateFailed"));
+                    },
                 }
-            });
+            );
         }
     };
 
@@ -434,7 +484,7 @@ export default function LanguageManagement({
 
     return (
         <>
-            <Head title="语言管理" />
+            <Head title={t("telegram.languages.title")} />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -443,10 +493,10 @@ export default function LanguageManagement({
                         <div className="flex items-center justify-between">
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">
-                                    语言管理
+                                    {t("telegram.languages.title")}
                                 </h1>
                                 <p className="mt-1 text-sm text-gray-500">
-                                    管理Telegram Bot支持的语言和翻译
+                                    {t("telegram.languages.subtitle")}
                                 </p>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -455,23 +505,9 @@ export default function LanguageManagement({
                                     className="flex items-center space-x-2"
                                 >
                                     <FaPlus />
-                                    <span>添加语言</span>
-                                </Button>
-                                <Button
-                                    onClick={handleExport}
-                                    variant="outline"
-                                    className="flex items-center space-x-2"
-                                >
-                                    <FaFileExport />
-                                    <span>导出</span>
-                                </Button>
-                                <Button
-                                    onClick={() => setShowImportModal(true)}
-                                    variant="outline"
-                                    className="flex items-center space-x-2"
-                                >
-                                    <FaFileImport />
-                                    <span>导入</span>
+                                    <span>
+                                        {t("telegram.languages.addLanguage")}
+                                    </span>
                                 </Button>
                             </div>
                         </div>
@@ -484,7 +520,9 @@ export default function LanguageManagement({
                                 <div className="text-2xl font-bold text-blue-600">
                                     {stats.total_languages || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">总语言数</div>
+                                <div className="text-sm text-gray-500">
+                                    {t("telegram.languages.totalLanguages")}
+                                </div>
                             </div>
                         </Card>
                         <Card padding="default">
@@ -492,7 +530,9 @@ export default function LanguageManagement({
                                 <div className="text-2xl font-bold text-green-600">
                                     {stats.active_languages || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">活跃语言</div>
+                                <div className="text-sm text-gray-500">
+                                    {t("telegram.languages.activeLanguages")}
+                                </div>
                             </div>
                         </Card>
                         <Card padding="default">
@@ -500,33 +540,69 @@ export default function LanguageManagement({
                                 <div className="text-2xl font-bold text-purple-600">
                                     {stats.total_translations || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">总翻译数</div>
+                                <div className="text-sm text-gray-500">
+                                    {t("telegram.languages.totalTranslations")}
+                                </div>
                             </div>
                         </Card>
                     </div>
 
                     {/* 搜索和筛选 */}
-                    <Card title="搜索和筛选" padding="default" className="mb-6">
+                    <Card
+                        title={t("telegram.languages.searchAndFilter")}
+                        padding="default"
+                        className="mb-6"
+                    >
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <Input
                                     type="text"
-                                    placeholder="搜索语言名称或代码..."
+                                    placeholder={t(
+                                        "telegram.languages.searchLanguages"
+                                    )}
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                    onChange={(e) =>
+                                        setSearchTerm(e.target.value)
+                                    }
+                                    onKeyPress={(e) =>
+                                        e.key === "Enter" && handleSearch()
+                                    }
                                 />
                             </div>
                             <div>
                                 <Select
                                     value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    placeholder="选择状态"
+                                    onChange={(e) =>
+                                        setStatusFilter(e.target.value)
+                                    }
+                                    placeholder={t(
+                                        "telegram.languages.filterByStatus"
+                                    )}
                                     options={[
-                                        { value: '', label: '所有状态' },
-                                        { value: 'active', label: '活跃' },
-                                        { value: 'inactive', label: '禁用' },
-                                        { value: 'default', label: '默认语言' }
+                                        {
+                                            value: "",
+                                            label: t(
+                                                "telegram.languages.allStatuses"
+                                            ),
+                                        },
+                                        {
+                                            value: "active",
+                                            label: t(
+                                                "telegram.languages.active"
+                                            ),
+                                        },
+                                        {
+                                            value: "inactive",
+                                            label: t(
+                                                "telegram.languages.inactive"
+                                            ),
+                                        },
+                                        {
+                                            value: "default",
+                                            label: t(
+                                                "telegram.languages.defaultLanguage"
+                                            ),
+                                        },
                                     ]}
                                 />
                             </div>
@@ -536,14 +612,17 @@ export default function LanguageManagement({
                                     className="w-full flex items-center justify-center space-x-2"
                                 >
                                     <FaSearch />
-                                    <span>搜索</span>
+                                    <span>{t("common.search")}</span>
                                 </Button>
                             </div>
                         </div>
                     </Card>
 
                     {/* 语言列表 */}
-                    <Card title="语言列表" padding="none">
+                    <Card
+                        title={t("telegram.languages.languageList")}
+                        padding="none"
+                    >
                         <div className="p-6">
                             {languages.length > 0 ? (
                                 <>
@@ -552,18 +631,30 @@ export default function LanguageManagement({
                                         <label className="flex items-center">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedLanguages.size === languages.length && languages.length > 0}
+                                                checked={
+                                                    selectedLanguages.size ===
+                                                        languages.length &&
+                                                    languages.length > 0
+                                                }
                                                 onChange={handleSelectAll}
                                                 className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                             />
                                             <span className="ml-2 text-sm text-gray-700">
-                                                全选 ({selectedLanguages.size}/{languages.length})
+                                                {t(
+                                                    "telegram.languages.selectAll",
+                                                    {
+                                                        count: selectedLanguages.size,
+                                                        total: languages.length,
+                                                    }
+                                                )}
                                             </span>
                                         </label>
 
                                         <div className="flex items-center space-x-2">
                                             <span className="text-sm text-gray-500">
-                                                拖拽以调整排序
+                                                {t(
+                                                    "telegram.languages.dragToReorder"
+                                                )}
                                             </span>
                                             <FaSort className="text-gray-400" />
                                         </div>
@@ -576,8 +667,12 @@ export default function LanguageManagement({
                                         onDragEnd={handleDragEnd}
                                     >
                                         <SortableContext
-                                            items={languages.map(lang => lang.id)}
-                                            strategy={verticalListSortingStrategy}
+                                            items={languages.map(
+                                                (lang) => lang.id
+                                            )}
+                                            strategy={
+                                                verticalListSortingStrategy
+                                            }
                                         >
                                             <div className="space-y-3">
                                                 {languages.map((language) => (
@@ -585,12 +680,22 @@ export default function LanguageManagement({
                                                         key={language.id}
                                                         id={language.id}
                                                         language={language}
-                                                        selectedLanguages={selectedLanguages}
-                                                        setSelectedLanguages={setSelectedLanguages}
-                                                        handleToggleStatus={handleToggleStatus}
-                                                        handleSetDefault={handleSetDefault}
+                                                        selectedLanguages={
+                                                            selectedLanguages
+                                                        }
+                                                        setSelectedLanguages={
+                                                            setSelectedLanguages
+                                                        }
+                                                        handleToggleStatus={
+                                                            handleToggleStatus
+                                                        }
+                                                        handleSetDefault={
+                                                            handleSetDefault
+                                                        }
                                                         handleEdit={handleEdit}
-                                                        handleDelete={handleDelete}
+                                                        handleDelete={
+                                                            handleDelete
+                                                        }
                                                     />
                                                 ))}
                                             </div>
@@ -601,10 +706,10 @@ export default function LanguageManagement({
                                 <div className="text-center py-12">
                                     <FaGlobe className="mx-auto h-12 w-12 text-gray-400" />
                                     <h3 className="mt-2 text-sm font-medium text-gray-900">
-                                        暂无语言
+                                        {t("telegram.languages.noLanguages")}
                                     </h3>
                                     <p className="mt-1 text-sm text-gray-500">
-                                        开始添加您的第一个语言
+                                        {t("telegram.languages.startCreating")}
                                     </p>
                                     <div className="mt-6">
                                         <Button
@@ -612,7 +717,11 @@ export default function LanguageManagement({
                                             className="flex items-center space-x-2"
                                         >
                                             <FaPlus />
-                                            <span>添加语言</span>
+                                            <span>
+                                                {t(
+                                                    "telegram.languages.addLanguage"
+                                                )}
+                                            </span>
                                         </Button>
                                     </div>
                                 </div>
@@ -622,25 +731,51 @@ export default function LanguageManagement({
 
                     {/* 菜单项翻译管理 */}
                     {menuItems.length > 0 && (
-                        <Card title="菜单项翻译管理" padding="default" className="mt-6">
+                        <Card
+                            title={t(
+                                "telegram.languages.menuItemTranslationManagement"
+                            )}
+                            padding="default"
+                            className="mt-6"
+                        >
                             <div className="space-y-3">
-                                {menuItems.map(menuItem => (
-                                    <div key={menuItem.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                {menuItems.map((menuItem) => (
+                                    <div
+                                        key={menuItem.id}
+                                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                                    >
                                         <div>
                                             <div className="font-medium text-gray-900">
                                                 {menuItem.key}
                                             </div>
                                             <div className="text-sm text-gray-500">
-                                                翻译数: {menuItem.translations?.length || 0}/{languages.length}
+                                                {t(
+                                                    "telegram.languages.translationsCount",
+                                                    {
+                                                        count:
+                                                            menuItem
+                                                                .translations
+                                                                ?.length || 0,
+                                                        total: languages.length,
+                                                    }
+                                                )}
                                             </div>
                                         </div>
                                         <Button
                                             size="sm"
-                                            onClick={() => handleManageTranslations(menuItem)}
+                                            onClick={() =>
+                                                handleManageTranslations(
+                                                    menuItem
+                                                )
+                                            }
                                             className="flex items-center space-x-2"
                                         >
                                             <FaLanguage />
-                                            <span>管理翻译</span>
+                                            <span>
+                                                {t(
+                                                    "telegram.languages.manageTranslations"
+                                                )}
+                                            </span>
                                         </Button>
                                     </div>
                                 ))}
@@ -658,7 +793,11 @@ export default function LanguageManagement({
                                 resetForm();
                                 setEditingLanguage(null);
                             }}
-                            title={editingLanguage ? '编辑语言' : '添加语言'}
+                            title={
+                                editingLanguage
+                                    ? t("telegram.languages.editLanguage")
+                                    : t("telegram.languages.addLanguage")
+                            }
                             size="xl"
                             bodyClassName="max-h-[70vh]"
                         >
@@ -666,26 +805,53 @@ export default function LanguageManagement({
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            语言代码 *
+                                            {t(
+                                                "telegram.languages.languageCode"
+                                            )}{" "}
+                                            *
                                         </label>
                                         <Input
                                             type="text"
                                             value={formData.code}
-                                            onChange={(e) => setFormData({...formData, code: e.target.value})}
-                                            placeholder="如: en, zh, fr"
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    code: e.target.value,
+                                                })
+                                            }
+                                            placeholder={t(
+                                                "telegram.languages.exampleCode",
+                                                {
+                                                    example: "en, zh, fr",
+                                                }
+                                            )}
                                             required
                                             disabled={!!editingLanguage}
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            语言名称 *
+                                            {t(
+                                                "telegram.languages.languageName"
+                                            )}{" "}
+                                            *
                                         </label>
                                         <Input
                                             type="text"
                                             value={formData.name}
-                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                            placeholder="如: English, 中文, Français"
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    name: e.target.value,
+                                                })
+                                            }
+                                            placeholder={t(
+                                                "telegram.languages.exampleName",
+                                                {
+                                                    example:
+                                                        "English, 中文, Français",
+                                                }
+                                            )}
                                             required
                                         />
                                     </div>
@@ -694,69 +860,120 @@ export default function LanguageManagement({
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            本地名称 *
+                                            {t("telegram.languages.nativeName")}{" "}
+                                            *
                                         </label>
                                         <Input
                                             type="text"
                                             value={formData.native_name}
-                                            onChange={(e) => setFormData({...formData, native_name: e.target.value})}
-                                            placeholder="如: English, 中文, Français"
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    native_name: e.target.value,
+                                                })
+                                            }
+                                            placeholder={t(
+                                                "telegram.languages.exampleNativeName",
+                                                {
+                                                    example:
+                                                        "English, 中文, Français",
+                                                }
+                                            )}
                                             required
                                         />
                                     </div>
                                     {/* <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            旗帜表情
+                                            {t('flag_emoji')}
                                         </label>
                                         <Input
                                             type="text"
                                             value={formData.flag_emoji}
                                             onChange={(e) => setFormData({...formData, flag_emoji: e.target.value})}
-                                            placeholder="如: 🇺🇸, 🇨🇳, 🇫🇷"
+                                            placeholder={t('example_flag_emoji', { example: '🇺🇸, 🇨🇳, 🇫🇷' })}
                                         />
                                     </div> */}
                                 </div>
 
                                 {/* 语言选择提示设置 */}
                                 <div className="border-t border-gray-200 pt-4">
-                                    <h4 className="text-sm font-medium text-gray-900 mb-3">语言选择提示设置</h4>
+                                    <h4 className="text-sm font-medium text-gray-900 mb-3">
+                                        {t(
+                                            "telegram.languages.languageSelectionSettings"
+                                        )}
+                                    </h4>
 
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                选择标题
+                                                {t(
+                                                    "telegram.languages.selectionTitle"
+                                                )}
                                             </label>
                                             <Input
                                                 type="text"
                                                 value={formData.selection_title}
-                                                onChange={(e) => setFormData({...formData, selection_title: e.target.value})}
-                                                placeholder="如: 请选择语言 / Please select language"
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        selection_title:
+                                                            e.target.value,
+                                                    })
+                                                }
+                                                placeholder={t(
+                                                    "telegram.languages.exampleSelectionTitle",
+                                                    {
+                                                        example:
+                                                            "请选择语言 / Please select language",
+                                                    }
+                                                )}
                                             />
                                             <p className="text-xs text-gray-500 mt-1">
-                                                留空将使用默认翻译文件中的文本
+                                                {t("telegram.languages.emptyToUseDefaultText")}
                                             </p>
                                         </div>
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                选择提示
+                                                {t("telegram.languages.selectionPrompt")}
                                             </label>
                                             <Textarea
-                                                value={formData.selection_prompt}
-                                                onChange={(e) => setFormData({...formData, selection_prompt: e.target.value})}
-                                                placeholder="如: 选择您的首选语言以获得更好的体验"
+                                                value={
+                                                    formData.selection_prompt
+                                                }
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        selection_prompt:
+                                                            e.target.value,
+                                                    })
+                                                }
+                                                placeholder={t(
+                                                    "telegram.languages.exampleSelectionPrompt",
+                                                    {
+                                                        example:
+                                                            "选择您的首选语言以获得更好的体验",
+                                                    }
+                                                )}
                                                 rows={2}
                                             />
                                             <p className="text-xs text-gray-500 mt-1">
-                                                留空将使用默认翻译文件中的文本
+                                                {t("telegram.languages.emptyToUseDefaultText")}
                                             </p>
                                         </div>
 
                                         <ImageSelector
                                             value={formData.selection_image_id}
-                                            onChange={(value) => setFormData({...formData, selection_image_id: value})}
-                                            label="选择图片"
-                                            placeholder="请选择图片（可选）"
+                                            onChange={(value) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    selection_image_id: value,
+                                                })
+                                            }
+                                            label={t("telegram.languages.selectImage")}
+                                            placeholder={t(
+                                                "telegram.languages.chooseImageOptional"
+                                            )}
                                             showUpload={true}
                                             availableImages={availableImages}
                                         />
@@ -765,20 +982,33 @@ export default function LanguageManagement({
 
                                 {/* 返回按钮文案 */}
                                 <div className="border-t border-gray-200 pt-4">
-                                    <h4 className="text-sm font-medium text-gray-900 mb-3">返回按钮文案</h4>
+                                    <h4 className="text-sm font-medium text-gray-900 mb-3">
+                                        {t("telegram.languages.backButtonText")}
+                                    </h4>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            返回按钮文本（可选）
+                                            {t("telegram.languages.backButtonTextOptional")}
                                         </label>
                                         <Input
                                             type="text"
                                             value={formData.back_label}
-                                            onChange={(e) => setFormData({...formData, back_label: e.target.value})}
-                                            placeholder="如: 🔙 返回 / Back / Kembali"
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    back_label: e.target.value,
+                                                })
+                                            }
+                                            placeholder={t(
+                                                "telegram.languages.exampleBackLabel",
+                                                {
+                                                    example:
+                                                        "🔙 返回 / Back / Kembali",
+                                                }
+                                            )}
                                         />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            留空则使用默认文案："🔙 返回"
-                                        </p>
+                                                                                    <p className="text-xs text-gray-500 mt-1">
+                                                {t("telegram.languages.emptyToUseDefaultText")}
+                                            </p>
                                     </div>
                                 </div>
 
@@ -787,11 +1017,16 @@ export default function LanguageManagement({
                                         <input
                                             type="checkbox"
                                             checked={formData.is_rtl}
-                                            onChange={(e) => setFormData({...formData, is_rtl: e.target.checked})}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    is_rtl: e.target.checked,
+                                                })
+                                            }
                                             className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                         />
                                         <span className="ml-2 text-sm text-gray-700">
-                                            从右到左 (RTL) 语言
+                                            {t("telegram.languages.rtlLanguage")}
                                         </span>
                                     </label>
 
@@ -799,11 +1034,16 @@ export default function LanguageManagement({
                                         <input
                                             type="checkbox"
                                             checked={formData.is_active}
-                                            onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    is_active: e.target.checked,
+                                                })
+                                            }
                                             className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                         />
                                         <span className="ml-2 text-sm text-gray-700">
-                                            启用语言
+                                            {t("telegram.languages.enableLanguage")}
                                         </span>
                                     </label>
 
@@ -812,11 +1052,17 @@ export default function LanguageManagement({
                                             <input
                                                 type="checkbox"
                                                 checked={formData.is_default}
-                                                onChange={(e) => setFormData({...formData, is_default: e.target.checked})}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        is_default:
+                                                            e.target.checked,
+                                                    })
+                                                }
                                                 className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                             />
                                             <span className="ml-2 text-sm text-gray-700">
-                                                设为默认语言
+                                                {t("telegram.languages.setAsDefaultLanguage")}
                                             </span>
                                         </label>
                                     )}
@@ -833,10 +1079,12 @@ export default function LanguageManagement({
                                             setEditingLanguage(null);
                                         }}
                                     >
-                                        取消
+                                        {t("common.cancel")}
                                     </Button>
                                     <Button type="submit">
-                                        {editingLanguage ? '更新' : '创建'}
+                                        {editingLanguage
+                                            ? t("telegram.languages.update")
+                                            : t("telegram.languages.create")}
                                     </Button>
                                 </div>
                             </form>
@@ -852,24 +1100,40 @@ export default function LanguageManagement({
                                 setTranslatingMenuItem(null);
                                 setTranslations({});
                             }}
-                            title={`管理翻译: ${translatingMenuItem.key}`}
+                            title={`${t("telegram.languages.manageTranslations")}: ${
+                                translatingMenuItem.key
+                            }`}
                             size="large"
                         >
                             <div className="space-y-6">
                                 <div className="text-sm text-gray-600">
-                                    为菜单项 "{translatingMenuItem.key}" 管理多语言翻译
+                                    {t("telegram.languages.manageTranslationsForMenuItem", {
+                                        menuItemKey: translatingMenuItem.key,
+                                    })}
                                 </div>
 
                                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                                    {languages.map(language => (
-                                        <div key={language.code} className="border border-gray-200 rounded-lg p-4">
+                                    {languages.map((language) => (
+                                        <div
+                                            key={language.code}
+                                            className="border border-gray-200 rounded-lg p-4"
+                                        >
                                             <div className="flex items-center space-x-2 mb-3">
-                                                <span className="text-lg">{language.flag_emoji || '🌐'}</span>
-                                                <span className="font-medium text-gray-900">{language.name}</span>
-                                                <span className="text-sm text-gray-500">({language.code.toUpperCase()})</span>
+                                                <span className="text-lg">
+                                                    {language.flag_emoji ||
+                                                        "🌐"}
+                                                </span>
+                                                <span className="font-medium text-gray-900">
+                                                    {language.name}
+                                                </span>
+                                                <span className="text-sm text-gray-500">
+                                                    (
+                                                    {language.code.toUpperCase()}
+                                                    )
+                                                </span>
                                                 {language.is_default && (
                                                     <span className="inline-flex items-center px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                                                        默认
+                                                        {t("telegram.languages.default")}
                                                     </span>
                                                 )}
                                             </div>
@@ -877,36 +1141,65 @@ export default function LanguageManagement({
                                             <div className="space-y-3">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        标题
+                                                        {t("telegram.languages.title")}
                                                     </label>
                                                     <Input
                                                         type="text"
-                                                        value={translations[language.code]?.title || ''}
-                                                        onChange={(e) => setTranslations({
-                                                            ...translations,
-                                                            [language.code]: {
-                                                                ...translations[language.code],
-                                                                title: e.target.value
-                                                            }
-                                                        })}
-                                                        placeholder="输入标题翻译"
+                                                        value={
+                                                            translations[
+                                                                language.code
+                                                            ]?.title || ""
+                                                        }
+                                                        onChange={(e) =>
+                                                            setTranslations({
+                                                                ...translations,
+                                                                [language.code]:
+                                                                    {
+                                                                        ...translations[
+                                                                            language
+                                                                                .code
+                                                                        ],
+                                                                        title: e
+                                                                            .target
+                                                                            .value,
+                                                                    },
+                                                            })
+                                                        }
+                                                        placeholder={t(
+                                                            "telegram.languages.enterTitleTranslation"
+                                                        )}
                                                     />
                                                 </div>
 
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        描述
-                                                    </label>
+                                                                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            {t("telegram.languages.description")}
+                                                        </label>
                                                     <Textarea
-                                                        value={translations[language.code]?.description || ''}
-                                                        onChange={(e) => setTranslations({
-                                                            ...translations,
-                                                            [language.code]: {
-                                                                ...translations[language.code],
-                                                                description: e.target.value
-                                                            }
-                                                        })}
-                                                        placeholder="输入描述翻译"
+                                                        value={
+                                                            translations[
+                                                                language.code
+                                                            ]?.description || ""
+                                                        }
+                                                        onChange={(e) =>
+                                                            setTranslations({
+                                                                ...translations,
+                                                                [language.code]:
+                                                                    {
+                                                                        ...translations[
+                                                                            language
+                                                                                .code
+                                                                        ],
+                                                                        description:
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                    },
+                                                            })
+                                                        }
+                                                        placeholder={t(
+                                                            "telegram.languages.enterDescriptionTranslation"
+                                                        )}
                                                         rows={2}
                                                     />
                                                 </div>
@@ -924,63 +1217,14 @@ export default function LanguageManagement({
                                             setTranslations({});
                                         }}
                                     >
-                                        取消
+                                        {t("common.cancel")}
                                     </Button>
                                     <Button
                                         onClick={handleSaveTranslations}
                                         className="flex items-center space-x-2"
                                     >
                                         <FaCheck />
-                                        <span>保存翻译</span>
-                                    </Button>
-                                </div>
-                            </div>
-                        </Modal>
-                    )}
-
-                    {/* 导入模态框 */}
-                    {showImportModal && (
-                        <Modal
-                            isOpen={showImportModal}
-                            onClose={() => {
-                                setShowImportModal(false);
-                                setImportData('');
-                            }}
-                            title="导入语言数据"
-                        >
-                            <div className="space-y-4">
-                                <div className="text-sm text-gray-600">
-                                    粘贴JSON格式的语言数据:
-                                </div>
-
-                                <Textarea
-                                    value={importData}
-                                    onChange={(e) => setImportData(e.target.value)}
-                                    placeholder='{
-  "languages": [...],
-  "translations": [...]
-}'
-                                    rows={10}
-                                    className="font-mono text-sm"
-                                />
-
-                                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            setShowImportModal(false);
-                                            setImportData('');
-                                        }}
-                                    >
-                                        取消
-                                    </Button>
-                                    <Button
-                                        onClick={handleImport}
-                                        disabled={!importData.trim()}
-                                        className="flex items-center space-x-2"
-                                    >
-                                        <FaFileImport />
-                                        <span>导入</span>
+                                        <span>{t("telegram.languages.saveTranslations")}</span>
                                     </Button>
                                 </div>
                             </div>

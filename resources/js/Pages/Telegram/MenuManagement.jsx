@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { Button, Card, Input, Select, Textarea, Modal } from '@/Components/UI';
+import { useTranslation } from 'react-i18next';
 import {
     FaPlus,
     FaEdit,
@@ -26,6 +27,7 @@ export default function MenuManagement({
     allMenuItems = [],
     flash = {}
 }) {
+    const { t } = useTranslation();
     const [expandedItems, setExpandedItems] = useState(new Set());
     const [editingItem, setEditingItem] = useState(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -87,13 +89,13 @@ export default function MenuManagement({
 
     // 处理删除
     const handleDelete = (itemId) => {
-        if (confirm('确定要删除这个菜单项吗？这将同时删除所有子菜单项。')) {
+        if (confirm(t('telegram.menu.confirmDelete'))) {
             router.delete(`/telegram/menu/${itemId}`, {
                 onSuccess: () => {
                     router.reload({ only: ['menuTree', 'stats'] });
                 },
                 onError: () => {
-                    toast.error('删除失败');
+                    toast.error(t('telegram.menu.deleteFailed'));
                 }
             });
         }
@@ -108,7 +110,7 @@ export default function MenuManagement({
                 router.reload({ only: ['menuTree'] });
             },
             onError: () => {
-                toast.error('状态更新失败');
+                toast.error(t('telegram.menu.statusUpdateFailed'));
             }
         });
     };
@@ -132,7 +134,7 @@ export default function MenuManagement({
             },
             onError: (errors) => {
                 console.error('表单错误:', errors);
-                toast.error('操作失败，请检查表单数据');
+                toast.error(t('telegram.menu.operationFailed'));
             }
         });
     };
@@ -189,7 +191,7 @@ export default function MenuManagement({
                 router.reload({ only: ['menuTree'] });
             },
             onError: () => {
-                toast.error('排序更新失败');
+                toast.error(t('telegram.menu.sortUpdateFailed'));
             }
         });
     };
@@ -239,11 +241,11 @@ export default function MenuManagement({
                                     item.type === 'callback' ? 'bg-purple-100 text-purple-800' :
                                     'bg-gray-100 text-gray-800'
                                 }`}>
-                                    {item.type}
+                                    {t(`telegram.menu.${item.type}`)}
                                 </span>
                                 {!item.is_active && (
                                     <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                                        已禁用
+                                        {t('telegram.menu.disabled')}
                                     </span>
                                 )}
                             </div>
@@ -253,13 +255,13 @@ export default function MenuManagement({
                                 </p>
                             )}
                             <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                                <span>排序: {item.sort_order}</span>
-                                <span>键: {item.key}</span>
+                                <span>{t('telegram.menu.sortOrder')}: {item.sort_order}</span>
+                                <span>{t('telegram.menu.key')}: {item.key}</span>
                                 {item.callback_data && (
-                                    <span>回调: {item.callback_data}</span>
+                                    <span>{t('telegram.menu.callback')}: {item.callback_data}</span>
                                 )}
                                 {item.url && (
-                                    <span>链接: {item.url}</span>
+                                    <span>{t('telegram.menu.link')}: {item.url}</span>
                                 )}
                             </div>
                         </div>
@@ -273,7 +275,7 @@ export default function MenuManagement({
                                     ? 'text-green-600 hover:bg-green-50'
                                     : 'text-red-600 hover:bg-red-50'
                             }`}
-                            title={item.is_active ? '禁用' : '启用'}
+                            title={item.is_active ? t('telegram.menu.disable') : t('telegram.menu.enable')}
                         >
                             {item.is_active ? <FaEye /> : <FaEyeSlash />}
                         </button>
@@ -281,7 +283,7 @@ export default function MenuManagement({
                         <button
                             onClick={() => handleEdit(item)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-md"
-                            title="编辑"
+                            title={t('telegram.menu.edit')}
                         >
                             <FaEdit />
                         </button>
@@ -289,7 +291,7 @@ export default function MenuManagement({
                         <button
                             onClick={() => handleDelete(item.id)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-md"
-                            title="删除"
+                            title={t('telegram.menu.delete')}
                         >
                             <FaTrash />
                         </button>
@@ -316,10 +318,10 @@ export default function MenuManagement({
                         <div className="flex items-center justify-between">
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">
-                                    菜单管理
+                                    {t('telegram.menu.title')}
                                 </h1>
                                 <p className="mt-1 text-sm text-gray-500">
-                                    管理Telegram Bot的动态菜单结构
+                                    {t('telegram.menu.description')}
                                 </p>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -341,7 +343,7 @@ export default function MenuManagement({
                                     className="flex items-center space-x-2"
                                 >
                                     <FaPlus />
-                                    <span>新建菜单项</span>
+                                    <span>{t('telegram.menu.createMenuItem')}</span>
                                 </Button>
                             </div>
                         </div>
@@ -354,7 +356,7 @@ export default function MenuManagement({
                                 <div className="text-2xl font-bold text-blue-600">
                                     {stats.total_items || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">总菜单项</div>
+                                <div className="text-sm text-gray-500">{t('telegram.menu.totalItems')}</div>
                             </div>
                         </Card>
                         <Card padding="default">
@@ -362,7 +364,7 @@ export default function MenuManagement({
                                 <div className="text-2xl font-bold text-green-600">
                                     {stats.active_items || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">活跃菜单项</div>
+                                <div className="text-sm text-gray-500">{t('telegram.menu.activeItems')}</div>
                             </div>
                         </Card>
                         <Card padding="default">
@@ -370,7 +372,7 @@ export default function MenuManagement({
                                 <div className="text-2xl font-bold text-purple-600">
                                     {stats.total_languages || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">支持语言</div>
+                                <div className="text-sm text-gray-500">{t('telegram.menu.supportedLanguages')}</div>
                             </div>
                         </Card>
                         <Card padding="default">
@@ -378,13 +380,13 @@ export default function MenuManagement({
                                 <div className="text-2xl font-bold text-orange-600">
                                     {stats.menu_clicks || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">菜单点击</div>
+                                <div className="text-sm text-gray-500">{t('telegram.menu.menuClicks')}</div>
                             </div>
                         </Card>
                     </div>
 
                     {/* 菜单树 */}
-                    <Card title="菜单结构" padding="none">
+                    <Card title={t('telegram.menu.menuStructure')} padding="none">
                         <div className="p-6">
                             {menuTree.length > 0 ? (
                                 <div className="space-y-2">
@@ -394,10 +396,10 @@ export default function MenuManagement({
                                 <div className="text-center py-12">
                                     <FaHome className="mx-auto h-12 w-12 text-gray-400" />
                                     <h3 className="mt-2 text-sm font-medium text-gray-900">
-                                        暂无菜单项
+                                        {t('telegram.menu.noMenuItems')}
                                     </h3>
                                     <p className="mt-1 text-sm text-gray-500">
-                                        开始创建您的第一个菜单项
+                                        {t('telegram.menu.startCreating')}
                                     </p>
                                     <div className="mt-6">
                                         <Button
@@ -409,7 +411,7 @@ export default function MenuManagement({
                                             className="flex items-center space-x-2"
                                         >
                                             <FaPlus />
-                                            <span>创建菜单项</span>
+                                            <span>{t('telegram.menu.createMenuItem')}</span>
                                         </Button>
                                     </div>
                                 </div>
@@ -425,7 +427,7 @@ export default function MenuManagement({
                                 setShowCreateForm(false);
                                 setEditingItem(null);
                             }}
-                            title={editingItem ? '编辑菜单项' : '创建菜单项'}
+                            title={editingItem ? t('telegram.menu.editMenuItem') : t('telegram.menu.addNewMenuItem')}
                             size="xl"
                             bodyClassName="max-h-[70vh]"
                         >
@@ -435,24 +437,24 @@ export default function MenuManagement({
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    菜单类型
+                                                    {t('telegram.menu.menuType')}
                                                 </label>
                                                 <Select
                                                     value={formData.type}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                                                     required
                                                     options={[
-                                                        { value: 'button', label: '按钮' },
-                                                        { value: 'url', label: '链接' },
-                                                        { value: 'submenu', label: '子菜单' },
-                                                        { value: 'callback', label: '回调' }
+                                                        { value: 'button', label: t('telegram.menu.button') },
+                                                        { value: 'url', label: t('telegram.menu.url') },
+                                                        { value: 'submenu', label: t('telegram.menu.submenu') },
+                                                        { value: 'callback', label: t('telegram.menu.callback') }
                                                     ]}
                                                 />
                                             </div>
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    菜单键值
+                                                    {t('telegram.menu.menuKey')}
                                                 </label>
                                                 <Input
                                                     type="text"
@@ -467,13 +469,13 @@ export default function MenuManagement({
                                         {/* 父级菜单选择 */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                父级菜单
+                                                {t('telegram.menu.parentMenu')}
                                             </label>
                                             <Select
                                                 value={formData.parent_id || ''}
                                                 onChange={(e) => setFormData(prev => ({ ...prev, parent_id: e.target.value || null }))}
                                                 options={[
-                                                    { value: '', label: '无（根级菜单）' },
+                                                    { value: '', label: t('telegram.menu.noParent') },
                                                     ...allMenuItems
                                                         .filter(item => item.id !== editingItem && item.type !== 'url') // 排除自己和URL类型
                                                         .map(item => ({
@@ -487,7 +489,7 @@ export default function MenuManagement({
                                         {(formData.type === 'button' || formData.type === 'callback' || formData.type === 'submenu') && (
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    回调数据
+                                                    {t('telegram.menu.callbackData')}
                                                 </label>
                                                 <Input
                                                     type="text"
@@ -501,7 +503,7 @@ export default function MenuManagement({
                                         {formData.type === 'url' && (
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    链接地址
+                                                    {t('telegram.menu.urlAddress')}
                                                 </label>
                                                 <Input
                                                     type="url"
@@ -515,7 +517,7 @@ export default function MenuManagement({
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    排序
+                                                    {t('telegram.menu.sortOrder')}
                                                 </label>
                                                 <Input
                                                     type="number"
@@ -533,14 +535,14 @@ export default function MenuManagement({
                                                         onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
                                                         className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                                     />
-                                                    <span className="ml-2 text-sm text-gray-700">启用</span>
+                                                    <span className="ml-2 text-sm text-gray-700">{t('telegram.menu.enable')}</span>
                                                 </label>
                                             </div>
                                         </div>
 
                                         {/* 多语言翻译 */}
                                         <div>
-                                            <h4 className="text-sm font-medium text-gray-700 mb-3">多语言翻译</h4>
+                                            <h4 className="text-sm font-medium text-gray-700 mb-3">{t('telegram.menu.multilingualTranslations')}</h4>
                                             <div className="space-y-4">
                                                 {languages.map(lang => (
                                                     <div key={lang.id} className="border border-gray-200 rounded-lg p-4">
@@ -550,7 +552,7 @@ export default function MenuManagement({
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                             <div>
                                                                 <label className="block text-xs text-gray-500 mb-1">
-                                                                    标题
+                                                                    {t('telegram.menu.title')}
                                                                 </label>
                                                                 <Input
                                                                     type="text"
@@ -563,12 +565,12 @@ export default function MenuManagement({
                                                                         newTranslations[lang.id].title = e.target.value;
                                                                         setFormData(prev => ({ ...prev, translations: newTranslations }));
                                                                     }}
-                                                                    placeholder="菜单标题"
+                                                                    placeholder={t('telegram.menu.menuTitle')}
                                                                 />
                                                             </div>
                                                             <div>
                                                                 <label className="block text-xs text-gray-500 mb-1">
-                                                                    描述
+                                                                    {t('telegram.menu.description')}
                                                                 </label>
                                                                 <Textarea
                                                                     value={formData.translations[lang.id]?.description || ''}
@@ -580,7 +582,7 @@ export default function MenuManagement({
                                                                         newTranslations[lang.id].description = e.target.value;
                                                                         setFormData(prev => ({ ...prev, translations: newTranslations }));
                                                                     }}
-                                                                    placeholder="菜单描述"
+                                                                    placeholder={t('telegram.menu.menuDescription')}
                                                                     rows={2}
                                                                 />
                                                             </div>
@@ -600,11 +602,11 @@ export default function MenuManagement({
                                             setEditingItem(null);
                                         }}
                                     >
-                                        取消
+                                        {t('telegram.menu.cancel')}
                                     </Button>
                                     <Button type="submit" className="flex items-center space-x-2">
                                         <FaSave />
-                                        <span>{editingItem ? '更新' : '创建'}</span>
+                                        <span>{editingItem ? t('telegram.menu.update') : t('telegram.menu.create')}</span>
                                     </Button>
                                 </div>
                             </form>

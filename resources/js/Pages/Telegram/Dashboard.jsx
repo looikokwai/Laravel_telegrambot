@@ -1,21 +1,24 @@
 import React from "react";
 import { Head, Link } from "@inertiajs/react";
 import { Button, Card } from "@/Components/UI";
+import { useTranslation } from 'react-i18next';
 import { FaUsers, FaChartLine, FaGlobe } from "react-icons/fa";
 
 export default function TelegramDashboard({ stats, recentUsers }) {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="Telegram Bot 管理" />
+            <Head title={t('dashboard.title')} />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold text-gray-900">
-                            概览
+                            {t('dashboard.title')}
                         </h1>
                         <p className="mt-1 text-sm text-gray-500">
-                            Telegram Bot 管理面板概览
+                            {t('dashboard.subtitle')}
                         </p>
                     </div>
 
@@ -30,7 +33,7 @@ export default function TelegramDashboard({ stats, recentUsers }) {
                                 </div>
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">
-                                        总用户数
+                                        {t('dashboard.stats.totalUsers')}
                                     </p>
                                     <p className="text-2xl font-bold text-gray-900">
                                         {stats?.available_targets?.all || 0}
@@ -48,7 +51,7 @@ export default function TelegramDashboard({ stats, recentUsers }) {
                                 </div>
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">
-                                        活跃用户
+                                        {t('dashboard.stats.activeUsers')}
                                     </p>
                                     <p className="text-2xl font-bold text-gray-900">
                                         {stats?.available_targets?.active || 0}
@@ -66,7 +69,7 @@ export default function TelegramDashboard({ stats, recentUsers }) {
                                 </div>
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">
-                                        7天活跃
+                                        {t('dashboard.stats.recent7Days')}
                                     </p>
                                     <p className="text-2xl font-bold text-gray-900">
                                         {stats?.available_targets
@@ -85,7 +88,7 @@ export default function TelegramDashboard({ stats, recentUsers }) {
                                 </div>
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">
-                                        已选语言
+                                        {t('dashboard.stats.languageSelected')}
                                     </p>
                                     <p className="text-2xl font-bold text-gray-900">
                                         {stats?.users_with_language_selected ||
@@ -98,22 +101,22 @@ export default function TelegramDashboard({ stats, recentUsers }) {
 
 
                     {/* 最近用户 */}
-                    <Card title="最近用户" padding="none">
+                    <Card title={t('dashboard.recentUsers')} padding="none">
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            用户
+                                            {t('telegram.users.user')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            语言
+                                            {t('telegram.languages.language')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            状态
+                                            {t('telegram.users.status')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            最后活跃
+                                            {t('telegram.users.lastInteraction')}
                                         </th>
                                     </tr>
                                 </thead>
@@ -160,16 +163,16 @@ export default function TelegramDashboard({ stats, recentUsers }) {
                                                     }`}
                                                 >
                                                     {user.is_active
-                                                        ? "活跃"
-                                                        : "非活跃"}
+                                                        ? t('telegram.users.active')
+                                                        : t('telegram.users.inactive')}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {user.last_interaction
                                                     ? new Date(
                                                           user.last_interaction
-                                                      ).toLocaleString("zh-CN")
-                                                    : "从未"}
+                                                      ).toLocaleString()
+                                                    : t('telegram.users.never')}
                                             </td>
                                         </tr>
                                     ))}
@@ -183,7 +186,7 @@ export default function TelegramDashboard({ stats, recentUsers }) {
                                 variant="outline"
                                 size="sm"
                             >
-                                查看所有用户
+                                {t('telegram.users.viewAllUsers')}
                             </Button>
                         </div>
                     </Card>

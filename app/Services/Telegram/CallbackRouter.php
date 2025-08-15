@@ -45,12 +45,6 @@ class CallbackRouter
     public function route(TelegramUser $user, string $data, int $messageId, string $callbackQueryId): bool
     {
         try {
-            Log::info('CallbackRouter: Processing callback', [
-                'user_id' => $user->id,
-                'data' => $data,
-                'message_id' => $messageId
-            ]);
-
             // 语言选择回调
             if (str_starts_with($data, 'lang_')) {
                 return $this->handleLanguageCallback($user, $data, $callbackQueryId);
@@ -87,11 +81,6 @@ class CallbackRouter
     {
         $languageCode = substr($data, 5); // 移除 'lang_' 前缀
 
-        Log::info('CallbackRouter: Processing language callback', [
-            'user_id' => $user->id,
-            'language_code' => $languageCode
-        ]);
-
         // 调用TelegramMessageService的handleLanguageSelection方法
         if ($this->messageService && method_exists($this->messageService, 'handleLanguageSelection')) {
             // 使用反射调用私有方法
@@ -121,11 +110,6 @@ class CallbackRouter
     {
         $command = '/' . substr($data, 4); // 移除 'cmd_' 前缀并添加 '/' 前缀
 
-        Log::info('CallbackRouter: Processing command callback', [
-            'user_id' => $user->id,
-            'command' => $command
-        ]);
-
         // 使用TelegramCommandFactory处理命令
         $commandFactory = new TelegramCommandFactory();
         $commandHandler = $commandFactory->getCommandHandler($command);
@@ -139,13 +123,9 @@ class CallbackRouter
                     // 查找 welcome_message 菜单项
                     $welcomeMenuItem = $this->menuService->findMenuItemByKey('welcome_message');
                     if ($welcomeMenuItem) {
-                        Log::info('CallbackRouter: Found welcome_message menu item, showing its submenu', [
-                            'welcome_menu_id' => $welcomeMenuItem->id
-                        ]);
                         // 由于接口限制，命令处理器execute不接受menuId，这里直接用StartCommand实例
                         $this->startCommand->execute($user, $message, $welcomeMenuItem->id);
                     } else {
-                        Log::warning('CallbackRouter: welcome_message menu item not found, showing root menu');
                         $commandHandler->execute($user, $message);
                     }
                 } else {
@@ -185,11 +165,6 @@ class CallbackRouter
     {
         $menuKey = substr($data, 5); // 移除 'menu_' 前缀
 
-        Log::info('CallbackRouter: Processing formatted menu callback', [
-            'user_id' => $user->id,
-            'menu_key' => $menuKey
-        ]);
-
         // 查找菜单项
         $menuItem = TelegramMenuItem::where('key', $menuKey)
             ->orWhere('callback_data', $data)
@@ -200,7 +175,6 @@ class CallbackRouter
             return $this->processMenuItemCallback($user, $menuItem, $data, $callbackQueryId);
         }
 
-        Log::warning('CallbackRouter: Formatted menu item not found', ['data' => $data]);
         return false;
     }
 
@@ -209,10 +183,6 @@ class CallbackRouter
      */
     private function handleDefaultMenuCallback(TelegramUser $user, string $data, string $callbackQueryId): bool
     {
-        Log::info('CallbackRouter: Processing default menu callback', [
-            'user_id' => $user->id,
-            'data' => $data
-        ]);
 
         // 查找菜单项
         $menuItem = TelegramMenuItem::where('callback_data', $data)
@@ -233,12 +203,6 @@ class CallbackRouter
      */
     private function processMenuItemCallback(TelegramUser $user, TelegramMenuItem $menuItem, string $data, string $callbackQueryId): bool
     {
-        Log::info('CallbackRouter: Processing menu item callback', [
-            'user_id' => $user->id,
-            'menu_item_id' => $menuItem->id,
-            'menu_type' => $menuItem->type,
-            'data' => $data
-        ]);
 
         switch ($menuItem->type) {
             case 'submenu':
@@ -260,10 +224,6 @@ class CallbackRouter
                 break;
 
             default:
-                Log::warning('CallbackRouter: Unknown menu item type', [
-                    'type' => $menuItem->type,
-                    'menu_item_id' => $menuItem->id
-                ]);
                 if ($this->messageService) {
                     $this->messageService->answerCallbackQuery($callbackQueryId, '操作已执行');
                 }
@@ -280,10 +240,6 @@ class CallbackRouter
      */
     private function processCallbackAction(TelegramUser $user, TelegramMenuItem $menuItem, string $callbackQueryId): bool
     {
-        Log::info('CallbackRouter: Processing callback action', [
-            'user_id' => $user->id,
-            'menu_item_id' => $menuItem->id
-        ]);
 
         // 特殊动作：更换语言（callback_data 或 key 为 language）
         if (($menuItem->callback_data === 'language') || ($menuItem->key === 'language')) {
@@ -310,10 +266,6 @@ class CallbackRouter
      */
     private function processButtonAction(TelegramUser $user, TelegramMenuItem $menuItem, string $callbackQueryId): bool
     {
-        Log::info('CallbackRouter: Processing button action', [
-            'user_id' => $user->id,
-            'menu_item_id' => $menuItem->id
-        ]);
 
         // 简短回调提示 + 发送详细信息（标题+描述）
         if ($this->messageService) {
@@ -331,10 +283,6 @@ class CallbackRouter
      */
     private function handleSpecialCallback(TelegramUser $user, string $data, string $callbackQueryId): bool
     {
-        Log::info('CallbackRouter: Processing special callback', [
-            'user_id' => $user->id,
-            'data' => $data
-        ]);
 
         // 新协议：back_to_{parentId} 或 back_to_root
         if (str_starts_with($data, 'back_to_')) {
@@ -381,7 +329,6 @@ class CallbackRouter
                 return true;
 
             default:
-                Log::warning('CallbackRouter: Unknown special callback', ['data' => $data]);
                 if ($this->messageService) {
                     $this->messageService->answerCallbackQuery($callbackQueryId, '未知操作');
                 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Head, useForm, router } from "@inertiajs/react";
 import { Button, Card, Select, Textarea, Input } from "@/Components/UI";
+import { useTranslation } from 'react-i18next';
 import {
     FaPaperPlane,
     FaUsers,
@@ -16,6 +17,7 @@ import {
 } from "react-icons/fa";
 
 export default function TelegramBroadcast({ stats }) {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState("broadcast");
     const [broadcasts, setBroadcasts] = useState(null);
     const [broadcastStats, setBroadcastStats] = useState(null);
@@ -55,16 +57,16 @@ export default function TelegramBroadcast({ stats }) {
 
     return (
         <>
-            <Head title="消息管理" />
+            <Head title={t('telegram.broadcast.messageManagement')} />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold text-gray-900">
-                            消息管理
+                            {t('telegram.broadcast.messageManagement')}
                         </h1>
                         <p className="mt-1 text-sm text-gray-500">
-                            发送群发消息和管理消息模板
+                            {t('telegram.broadcast.messageManagementSubtitle')}
                         </p>
                     </div>
 
@@ -80,7 +82,7 @@ export default function TelegramBroadcast({ stats }) {
                                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
-                                    群发消息
+                                    {t('telegram.broadcast.broadcastMessage')}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -93,7 +95,7 @@ export default function TelegramBroadcast({ stats }) {
                                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
-                                    广播历史
+                                    {t('telegram.broadcast.broadcastHistory')}
                                 </button>
                                 <button
                                     onClick={() => setActiveTab("stats")}
@@ -103,7 +105,7 @@ export default function TelegramBroadcast({ stats }) {
                                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
-                                    发送统计
+                                    {t('telegram.broadcast.stats')}
                                 </button>
                             </nav>
                         </div>
@@ -111,13 +113,13 @@ export default function TelegramBroadcast({ stats }) {
 
                     {/* 群发消息 */}
                     {activeTab === "broadcast" && (
-                        <Card title="群发消息">
+                        <Card title={t('telegram.broadcast.broadcastMessage')}>
                             <form
                                 onSubmit={handleBroadcast}
                                 className="space-y-6"
                             >
                                 <Select
-                                    label="目标用户"
+                                    label={t('telegram.broadcast.targetUsers')}
                                     id="target"
                                     value={data.target}
                                     onChange={(e) =>
@@ -126,28 +128,28 @@ export default function TelegramBroadcast({ stats }) {
                                     options={[
                                         {
                                             value: "active",
-                                            label: `活跃用户 (${
+                                            label: `${t('telegram.broadcast.activeUsers')} (${
                                                 stats?.available_targets
                                                     ?.active || 0
                                             })`,
                                         },
                                         {
                                             value: "all",
-                                            label: `所有用户 (${
+                                            label: `${t('telegram.broadcast.allUsers')} (${
                                                 stats?.available_targets?.all ||
                                                 0
                                             })`,
                                         },
                                         {
                                             value: "recent",
-                                            label: `最近7天活跃 (${
+                                            label: `${t('telegram.broadcast.recent7Days')} (${
                                                 stats?.available_targets
                                                     ?.recent_7_days || 0
                                             })`,
                                         },
                                         {
                                             value: "recent_30",
-                                            label: `最近30天活跃 (${
+                                            label: `${t('telegram.broadcast.recent30Days')} (${
                                                 stats?.available_targets
                                                     ?.recent_30_days || 0
                                             })`,
@@ -156,13 +158,13 @@ export default function TelegramBroadcast({ stats }) {
                                 />
 
                                 <Textarea
-                                    label="消息内容"
+                                    label={t('telegram.broadcast.messageContent')}
                                     id="message"
                                     value={data.message}
                                     onChange={(e) =>
                                         setData("message", e.target.value)
                                     }
-                                    placeholder="输入要发送的消息..."
+                                    placeholder={t('telegram.broadcast.enterMessage')}
                                     rows={6}
                                     required
                                     error={errors.message}
@@ -171,7 +173,7 @@ export default function TelegramBroadcast({ stats }) {
                                 {/* 图片上传 */}
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-gray-700">
-                                        图片上传
+                                        {t('telegram.broadcast.imageUpload')}
                                     </label>
                                     <div className="flex items-center space-x-4">
                                         <input
@@ -210,7 +212,7 @@ export default function TelegramBroadcast({ stats }) {
                                 {/* 键盘配置 */}
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-gray-700">
-                                        键盘按钮
+                                        {t('telegram.broadcast.keyboardButtons')}
                                     </label>
                                     <div className="space-y-2">
                                         {data.keyboard.map((row, rowIndex) => (
@@ -218,7 +220,7 @@ export default function TelegramBroadcast({ stats }) {
                                                 {row.map((button, buttonIndex) => (
                                                     <div key={buttonIndex} className="flex items-center space-x-1">
                                                         <Input
-                                                            placeholder="按钮文字"
+                                                            placeholder={t('telegram.broadcast.buttonText')}
                                                             value={button.text || ""}
                                                             onChange={(e) => {
                                                                 const newKeyboard = [...data.keyboard];
@@ -228,7 +230,7 @@ export default function TelegramBroadcast({ stats }) {
                                                             className="w-32"
                                                         />
                                                         <Input
-                                                            placeholder="回调数据或URL"
+                                                            placeholder={t('telegram.broadcast.callbackDataOrUrl')}
                                                             value={button.callback_data || button.url || ""}
                                                             onChange={(e) => {
                                                                 const newKeyboard = [...data.keyboard];
@@ -283,7 +285,7 @@ export default function TelegramBroadcast({ stats }) {
                                             }}
                                         >
                                             <FaPlus className="w-3 h-3 mr-1" />
-                                            添加按钮行
+                                            {t('telegram.broadcast.addButtonRow')}
                                         </Button>
                                     </div>
                                 </div>
@@ -295,10 +297,10 @@ export default function TelegramBroadcast({ stats }) {
                                         </div>
                                         <div className="ml-3">
                                             <p className="text-sm text-yellow-700">
-                                                消息将通过队列异步发送，请确保队列处理器正在运行。
+                                                {t('telegram.broadcast.queueWarning')}
                                             </p>
                                             <p className="text-sm text-yellow-600 mt-1">
-                                                发送统计将在消息实际发送完成后更新，包括用户block等失败情况。失败的消息会自动重试最多3次。
+                                                {t('telegram.broadcast.queueWarningDetail')}
                                             </p>
                                         </div>
                                     </div>
@@ -312,13 +314,11 @@ export default function TelegramBroadcast({ stats }) {
                                     className="inline-flex items-center space-x-2"
                                 >
                                     <FaPaperPlane className="w-4 h-4" />
-                                    <span>发送消息</span>
+                                    <span>{t('telegram.broadcast.sendMessage')}</span>
                                 </Button>
                             </form>
                         </Card>
                     )}
-
-
 
                     {/* 发送统计 */}
                     {activeTab === "stats" && (
@@ -332,7 +332,7 @@ export default function TelegramBroadcast({ stats }) {
                                     </div>
                                     <div className="ml-4">
                                         <p className="text-sm font-medium text-gray-500">
-                                            总用户数
+                                            {t('telegram.broadcast.totalUsers')}
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900">
                                             {stats?.available_targets?.all || 0}
@@ -350,7 +350,7 @@ export default function TelegramBroadcast({ stats }) {
                                     </div>
                                     <div className="ml-4">
                                         <p className="text-sm font-medium text-gray-500">
-                                            活跃用户
+                                            {t('telegram.broadcast.activeUsers')}
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900">
                                             {stats?.available_targets?.active ||
@@ -369,7 +369,7 @@ export default function TelegramBroadcast({ stats }) {
                                     </div>
                                     <div className="ml-4">
                                         <p className="text-sm font-medium text-gray-500">
-                                            7天活跃
+                                            {t('telegram.broadcast.recent7DaysActive')}
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900">
                                             {stats?.available_targets
@@ -388,7 +388,7 @@ export default function TelegramBroadcast({ stats }) {
                                     </div>
                                     <div className="ml-4">
                                         <p className="text-sm font-medium text-gray-500">
-                                            已选语言
+                                            {t('telegram.broadcast.languageSelected')}
                                         </p>
                                         <p className="text-2xl font-bold text-gray-900">
                                             {stats?.users_with_language_selected ||
@@ -409,7 +409,7 @@ export default function TelegramBroadcast({ stats }) {
                                     <div className="flex items-center">
                                         <FaHistory className="w-8 h-8 text-blue-500" />
                                         <div className="ml-4">
-                                            <p className="text-sm text-gray-600">总广播数</p>
+                                            <p className="text-sm text-gray-600">{t('telegram.broadcast.totalBroadcasts')}</p>
                                             <p className="text-2xl font-bold">{broadcastStats?.total_broadcasts || 0}</p>
                                         </div>
                                     </div>
@@ -419,7 +419,7 @@ export default function TelegramBroadcast({ stats }) {
                                     <div className="flex items-center">
                                         <FaPaperPlane className="w-8 h-8 text-green-500" />
                                         <div className="ml-4">
-                                            <p className="text-sm text-gray-600">成功发送</p>
+                                            <p className="text-sm text-gray-600">{t('telegram.broadcast.successfullySent')}</p>
                                             <p className="text-2xl font-bold">{broadcastStats?.total_sent || 0}</p>
                                         </div>
                                     </div>
@@ -429,7 +429,7 @@ export default function TelegramBroadcast({ stats }) {
                                     <div className="flex items-center">
                                         <FaUsers className="w-8 h-8 text-orange-500" />
                                         <div className="ml-4">
-                                            <p className="text-sm text-gray-600">成功率</p>
+                                            <p className="text-sm text-gray-600">{t('telegram.broadcast.successRate')}</p>
                                             <p className="text-2xl font-bold">{broadcastStats?.success_rate || 0}%</p>
                                         </div>
                                     </div>
@@ -439,7 +439,7 @@ export default function TelegramBroadcast({ stats }) {
                                     <div className="flex items-center">
                                         <FaChartLine className="w-8 h-8 text-purple-500" />
                                         <div className="ml-4">
-                                            <p className="text-sm text-gray-600">本周广播</p>
+                                            <p className="text-sm text-gray-600">{t('telegram.broadcast.thisWeekBroadcasts')}</p>
                                             <p className="text-2xl font-bold">{broadcastStats?.recent_broadcasts || 0}</p>
                                         </div>
                                     </div>
@@ -447,25 +447,25 @@ export default function TelegramBroadcast({ stats }) {
                             </div>
 
                             {/* 广播历史列表 */}
-                            <Card title="广播历史">
+                            <Card title={t('telegram.broadcast.broadcastHistory')}>
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    消息内容
+                                                    {t('telegram.broadcast.messageContent')}
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    目标
+                                                    {t('telegram.broadcast.target')}
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    发送统计
+                                                    {t('telegram.broadcast.sendStats')}
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    状态
+                                                    {t('telegram.broadcast.status')}
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    发送时间
+                                                    {t('telegram.broadcast.sendTime')}
                                                 </th>
                                             </tr>
                                         </thead>
@@ -483,28 +483,28 @@ export default function TelegramBroadcast({ stats }) {
                                                             {broadcast.image_path && (
                                                                 <span className="inline-flex items-center text-xs text-gray-500">
                                                                     <FaImage className="w-3 h-3 mr-1" />
-                                                                    图片
+                                                                    {t('telegram.broadcast.image')}
                                                                 </span>
                                                             )}
                                                             {broadcast.keyboard && (
                                                                 <span className="inline-flex items-center text-xs text-gray-500">
                                                                     <FaKeyboard className="w-3 h-3 mr-1" />
-                                                                    键盘
+                                                                    {t('telegram.broadcast.keyboard')}
                                                                 </span>
                                                             )}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-900">
-                                                        {broadcast.target === 'all' && '所有用户'}
-                                                        {broadcast.target === 'active' && '活跃用户'}
-                                                        {broadcast.target === 'recent' && '最近7天活跃'}
-                                                        {broadcast.target === 'recent_30' && '最近30天活跃'}
-                                                        {broadcast.target === 'inactive' && '非活跃用户'}
+                                                        {broadcast.target === 'all' && t('telegram.broadcast.allUsers')}
+                                                        {broadcast.target === 'active' && t('telegram.broadcast.activeUsers')}
+                                                        {broadcast.target === 'recent' && t('telegram.broadcast.recent7DaysActive')}
+                                                        {broadcast.target === 'recent_30' && t('telegram.broadcast.recent30DaysActive')}
+                                                        {broadcast.target === 'inactive' && t('telegram.broadcast.inactiveUsers')}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-900">
-                                                        <div>成功: <span className="font-medium text-green-600">{broadcast.sent_count}</span></div>
-                                                        <div>失败: <span className="font-medium text-red-600">{broadcast.failed_count}</span></div>
-                                                        <div>总计: <span className="font-medium">{broadcast.total_users}</span></div>
+                                                        <div>{t('telegram.broadcast.success')}: <span className="font-medium text-green-600">{broadcast.sent_count}</span></div>
+                                                        <div>{t('telegram.broadcast.failed')}: <span className="font-medium text-red-600">{broadcast.failed_count}</span></div>
+                                                        <div>{t('telegram.broadcast.total')}: <span className="font-medium">{broadcast.total_users}</span></div>
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -516,9 +516,9 @@ export default function TelegramBroadcast({ stats }) {
                                                                 ? 'bg-blue-100 text-blue-800'
                                                                 : 'bg-red-100 text-red-800'
                                                         }`}>
-                                                            {broadcast.status === 'completed' ? '发送完成' :
-                                                             broadcast.status === 'completed_with_errors' ? '部分成功' :
-                                                             broadcast.status === 'pending' ? '发送中(含重试)...' : '发送失败'}
+                                                            {broadcast.status === 'completed' ? t('telegram.broadcast.completed') :
+                                                             broadcast.status === 'completed_with_errors' ? t('telegram.broadcast.partiallySuccessful') :
+                                                             broadcast.status === 'pending' ? t('telegram.broadcast.sendingWithRetry') : t('telegram.broadcast.sendFailed')}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-900">
@@ -532,7 +532,7 @@ export default function TelegramBroadcast({ stats }) {
 
                                 {broadcasts.data.length === 0 && (
                                     <div className="text-center py-8">
-                                        <p className="text-gray-500">暂无广播记录</p>
+                                        <p className="text-gray-500">{t('telegram.broadcast.noBroadcastRecords')}</p>
                                     </div>
                                 )}
                             </Card>

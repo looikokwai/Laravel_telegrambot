@@ -128,6 +128,7 @@ class TelegramMenuSeeder extends Seeder
                     ],
                 ]
             ],
+
         ];
 
         // 创建子菜单项
@@ -171,10 +172,8 @@ class TelegramMenuSeeder extends Seeder
         }
 
         $this->command->info('菜单数据已成功创建！');
-        $this->command->info('根菜单: welcome_message, language, A, B, C');
+        $this->command->info('根菜单: welcome_message, language, language_changed');
         $this->command->info('welcome_message的子菜单: test, test2');
-        $this->command->info('A的子菜单: aa, bb, cc');
-        $this->command->info('B的子菜单: dd, ee, ff');
-        $this->command->info('C的子菜单: gg, hh, ii');
+        $this->command->info('language菜单: 点击后会调用 sendLanguageSelection');
     }
 }

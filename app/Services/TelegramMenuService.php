@@ -314,7 +314,6 @@ class TelegramMenuService
             // 检查用户是否存在，避免外键约束错误
             $userExists = \App\Models\TelegramUser::where('id', $userId)->exists();
             if (!$userExists) {
-                Log::warning("Skipping menu stat recording: User ID {$userId} does not exist");
                 return;
             }
 

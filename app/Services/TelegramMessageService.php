@@ -98,11 +98,10 @@ class TelegramMessageService
                 try {
                     $welcomeMenu = $this->menuService->findMenuItemByKey(self::DEFAULT_START_ROOT_KEY);
                     if ($welcomeMenu) {
-                        $this->startCommand->execute($user, ['text' => $text], $welcomeMenu->id);
-                        return;
-                    }
-                    Log::warning('未找到 welcome_message 菜单项，回退显示根菜单');
-                    // 找不到则继续走原有命令处理逻辑（显示根级）
+                                            $this->startCommand->execute($user, ['text' => $text], $welcomeMenu->id);
+                    return;
+                }
+                // 找不到则继续走原有命令处理逻辑（显示根级）
                 } catch (\Exception $e) {
                     Log::error('处理 /start 定向失败：' . $e->getMessage());
                     // 出错也回退到原有命令处理逻辑
@@ -165,35 +164,54 @@ class TelegramMessageService
      */
     private function handleLanguageSelection(TelegramUser $user, string $languageCode): void
     {
-        // 设置用户语言
-        $user->language = $languageCode;
-        $user->language_selected = true;
-        $user->save();
-
-        // 发送语言变更提示
-        $message = TelegramLanguageService::transForUser($user->telegram_user_id, 'language_changed');
-        $this->sendMessage($user->chat_id, $message);
-
-        // 调用 start 命令处理器，优先进入 welcome_message 子菜单
         try {
-            $welcomeMenu = $this->menuService->findMenuItemByKey(self::DEFAULT_START_ROOT_KEY);
-            if ($welcomeMenu) {
-                $this->startCommand->execute($user, ['callback_data' => 'lang_' . $languageCode], $welcomeMenu->id);
-                return;
+            // 设置用户语言
+            $user->language = $languageCode;
+            $user->language_selected = true;
+            $user->save();
+
+            // 发送语言变更提示
+            $message = TelegramLanguageService::transForUser($user->telegram_user_id, 'language_changed');
+            $this->sendMessage($user->chat_id, $message);
+
+            // 调用 start 命令处理器，优先进入 welcome_message 子菜单
+            try {
+                $welcomeMenu = $this->menuService->findMenuItemByKey(self::DEFAULT_START_ROOT_KEY);
+                if ($welcomeMenu) {
+                    $this->startCommand->execute($user, ['callback_data' => 'lang_' . $languageCode], $welcomeMenu->id);
+                    return;
+                }
+
+                // 找不到则回退到原有行为：无 menuItemId 的 start（显示根级）
+                $commandFactory = new TelegramCommandFactory();
+                $startCommand = $commandFactory->getCommandHandler('start');
+                if ($startCommand) {
+                    $startCommand->execute($user, ['callback_data' => 'lang_' . $languageCode]);
+                }
+            } catch (\Exception $e) {
+                // 回退处理
+                try {
+                    $commandFactory = new TelegramCommandFactory();
+                    $startCommand = $commandFactory->getCommandHandler('start');
+                    if ($startCommand) {
+                        $startCommand->execute($user, ['callback_data' => 'lang_' . $languageCode]);
+                    }
+                } catch (\Exception $fallbackError) {
+                    Log::error('handleLanguageSelection: 回退处理也失败', [
+                        'user_id' => $user->id,
+                        'error' => $fallbackError->getMessage()
+                    ]);
+                }
             }
-            // 找不到则回退到原有行为：无 menuItemId 的 start（显示根级）
-            $commandFactory = new TelegramCommandFactory();
-            $startCommand = $commandFactory->getCommandHandler('start');
-            if ($startCommand) {
-                $startCommand->execute($user, ['callback_data' => 'lang_' . $languageCode]);
-            }
+
         } catch (\Exception $e) {
-            Log::error('语言选择后进入欢迎菜单失败：' . $e->getMessage());
-            $commandFactory = new TelegramCommandFactory();
-            $startCommand = $commandFactory->getCommandHandler('start');
-            if ($startCommand) {
-                $startCommand->execute($user, ['callback_data' => 'lang_' . $languageCode]);
-            }
+            Log::error('handleLanguageSelection: 语言选择处理过程中发生异常', [
+                'user_id' => $user->id,
+                'language_code' => $languageCode,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
     }
 
@@ -255,7 +273,7 @@ class TelegramMessageService
         if ($selectionImageRelation && $selectionImageRelation->image) {
             try {
                 $image = $selectionImageRelation->image;
-                $storagePath = storage_path(path: 'app/private/' . $image->path);
+                $storagePath = storage_path('app/private/' . $image->path);
 
                 // 检查文件是否存在
                 if (file_exists($storagePath)) {
@@ -279,7 +297,10 @@ class TelegramMessageService
                 }
             } catch (\Exception $e) {
                 // 图片上传失败时发送文本消息作为回退
-                Log::error('Failed to send photo in language selection: ' . $e->getMessage());
+                Log::error('sendLanguageSelection: Failed to send photo, falling back to text', [
+                    'chat_id' => $chatId,
+                    'error' => $e->getMessage()
+                ]);
 
                 Telegram::sendMessage([
                     'chat_id' => $chatId,
@@ -350,10 +371,14 @@ class TelegramMessageService
 
             Telegram::sendMessage($params);
         } catch (\Exception $e) {
-            Log::error('Failed to send Telegram message: ' . $e->getMessage(), [
+            Log::error('sendMessage: 消息发送失败', [
                 'chat_id' => $chatId,
-                'message' => $message
+                'message_length' => strlen($message),
+                'error' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'trace' => $e->getTraceAsString()
             ]);
+            throw $e; // 重新抛出异常以便上层处理
         }
     }
 

@@ -93,7 +93,7 @@ class StartCommand extends AbstractTelegramCommand
                 }
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('发送菜单图片失败：' . $e->getMessage());
+            // 图片发送失败，静默处理
         }
 
         if ($result === false) {
@@ -185,7 +185,7 @@ class StartCommand extends AbstractTelegramCommand
                 }
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('获取返回按钮文案失败：' . $e->getMessage());
+            // 获取返回按钮文案失败，使用默认值
         }
         return '🔙 返回';
     }
@@ -251,7 +251,7 @@ class StartCommand extends AbstractTelegramCommand
                 ]
             );
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Failed to record menu stats: ' . $e->getMessage());
+            // 记录菜单统计失败，静默处理
         }
     }
 

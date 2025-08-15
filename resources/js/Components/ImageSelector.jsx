@@ -3,15 +3,22 @@ import { router } from '@inertiajs/react';
 import { Button, Modal, Input } from '@/Components/UI';
 import { FaPlus, FaUpload, FaTrash, FaCheck, FaTimes, FaImage, FaSearch } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const ImageSelector = ({
     value,
     onChange,
-    label = "选择图片",
-    placeholder = "请选择图片（可选）",
+    label,
+    placeholder,
     className = "",
     showUpload = true
 }) => {
+    const { t } = useTranslation();
+
+    // 使用翻译文本作为默认值
+    const defaultLabel = label || t('telegram.images.selectImage');
+    const defaultPlaceholder = placeholder || t('telegram.images.chooseImageOptional');
+
     const [availableImages, setAvailableImages] = useState([]);
     const [showImageModal, setShowImageModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
@@ -40,7 +47,7 @@ const ImageSelector = ({
                 setAvailableImages(data.data || []);
             }
         } catch (error) {
-            console.error('获取图片列表失败:', error);
+            console.error(t('telegram.images.fetchImagesFailed'), error);
         }
     };
 
@@ -86,7 +93,7 @@ const ImageSelector = ({
             // 使用 Inertia.js router.post 方法，它会自动处理 CSRF token
             router.post('/telegram/images/upload', formData, {
                 onSuccess: (page) => {
-                    toast.success('图片上传成功');
+                    toast.success(t('telegram.images.uploadSuccess'));
                     fetchAvailableImages();
                     setShowUploadModal(false);
                     setUploadFile(null);
@@ -98,15 +105,15 @@ const ImageSelector = ({
                     }
                 },
                 onError: (errors) => {
-                    console.error('上传失败:', errors);
-                    toast.error('上传失败');
+                    console.error(t('telegram.images.uploadFailed'), errors);
+                    toast.error(t('telegram.images.uploadFailed'));
                 },
                 preserveState: true,
                 preserveScroll: true
             });
         } catch (error) {
-            console.error('上传失败:', error);
-            toast.error('上传失败');
+            console.error(t('telegram.images.uploadFailed'), error);
+            toast.error(t('telegram.images.uploadFailed'));
         } finally {
             setLoading(false);
         }
@@ -121,7 +128,7 @@ const ImageSelector = ({
     return (
         <div className={className}>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-                {label}
+                {defaultLabel}
             </label>
 
             {/* 当前选中的图片预览 */}
@@ -162,7 +169,7 @@ const ImageSelector = ({
             ) : (
                 <div className="mb-3 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
                     <FaImage className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">{placeholder}</p>
+                    <p className="text-sm text-gray-500">{defaultPlaceholder}</p>
                 </div>
             )}
 
@@ -175,7 +182,7 @@ const ImageSelector = ({
                     className="flex items-center space-x-2"
                 >
                     <FaImage className="w-4 h-4" />
-                    <span>选择图片</span>
+                    <span>{t('telegram.images.selectImage')}</span>
                 </Button>
 
                 {showUpload && (
@@ -186,20 +193,20 @@ const ImageSelector = ({
                         className="flex items-center space-x-2"
                     >
                         <FaUpload className="w-4 h-4" />
-                        <span>上传新图片</span>
+                        <span>{t('telegram.images.uploadNewImage')}</span>
                     </Button>
                 )}
             </div>
 
             <p className="text-xs text-gray-500 mt-1">
-                留空将只发送文本消息，选择图片时会一起发送
+                {t('telegram.images.emptyImageHint')}
             </p>
 
             {/* 图片选择模态框 */}
             <Modal
                 isOpen={showImageModal}
                 onClose={() => setShowImageModal(false)}
-                title="选择图片"
+                title={t('telegram.images.selectImage')}
                 size="large"
             >
                 <div className="space-y-4">
@@ -207,7 +214,7 @@ const ImageSelector = ({
                     <div className="flex space-x-2">
                         <Input
                             type="text"
-                            placeholder="搜索图片..."
+                            placeholder={t('telegram.images.searchImages')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="flex-1"
@@ -221,7 +228,7 @@ const ImageSelector = ({
                                 className="flex items-center space-x-2"
                             >
                                 <FaPlus className="w-4 h-4" />
-                                <span>上传新图片</span>
+                                <span>{t('telegram.images.uploadNewImage')}</span>
                             </Button>
                         )}
                     </div>
@@ -264,10 +271,10 @@ const ImageSelector = ({
                     {filteredImages.length === 0 && (
                         <div className="text-center py-8">
                             <FaImage className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                            <p className="text-gray-500">没有找到图片</p>
+                            <p className="text-gray-500">{t('telegram.images.noImagesFound')}</p>
                             {searchTerm && (
                                 <p className="text-sm text-gray-400 mt-1">
-                                    尝试调整搜索条件
+                                    {t('telegram.images.tryAdjustSearch')}
                                 </p>
                             )}
                         </div>
@@ -278,7 +285,7 @@ const ImageSelector = ({
                             variant="outline"
                             onClick={() => setShowImageModal(false)}
                         >
-                            取消
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             onClick={() => {
@@ -287,7 +294,7 @@ const ImageSelector = ({
                             }}
                             variant="outline"
                         >
-                            清除选择
+                            {t('telegram.images.clearSelection')}
                         </Button>
                     </div>
                 </div>
@@ -301,14 +308,14 @@ const ImageSelector = ({
                     setUploadFile(null);
                     setUploadPreview(null);
                 }}
-                title="上传新图片"
+                title={t('telegram.images.uploadNewImage')}
                 size="medium"
             >
                 <div className="space-y-4">
                     {/* 文件选择 */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            选择图片文件
+                            {t('telegram.images.selectImageFile')}
                         </label>
                         <input
                             type="file"
@@ -321,14 +328,14 @@ const ImageSelector = ({
                     {/* 预览 */}
                     {uploadPreview && (
                         <div className="border border-gray-200 rounded-lg p-4">
-                            <p className="text-sm font-medium text-gray-700 mb-2">预览</p>
+                            <p className="text-sm font-medium text-gray-700 mb-2">{t('telegram.images.preview')}</p>
                             <img
                                 src={uploadPreview}
-                                alt="预览"
+                                alt={t('telegram.images.preview')}
                                 className="max-w-full h-48 object-contain mx-auto rounded"
                             />
                             <p className="text-xs text-gray-500 mt-2 text-center">
-                                文件名: {uploadFile?.name}
+                                {t('telegram.images.fileName')}: {uploadFile?.name}
                             </p>
                         </div>
                     )}
@@ -342,7 +349,7 @@ const ImageSelector = ({
                                 setUploadPreview(null);
                             }}
                         >
-                            取消
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             onClick={handleUpload}
@@ -350,7 +357,7 @@ const ImageSelector = ({
                             className="flex items-center space-x-2"
                         >
                             <FaUpload className="w-4 h-4" />
-                            <span>{loading ? '上传中...' : '上传'}</span>
+                            <span>{loading ? t('telegram.images.uploading') : t('telegram.images.upload')}</span>
                         </Button>
                     </div>
                 </div>

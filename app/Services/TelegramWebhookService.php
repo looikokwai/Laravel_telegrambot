@@ -19,17 +19,32 @@ class TelegramWebhookService
     public function handleUpdate(Update $update): void
     {
         try {
+
             // 处理普通消息
-            if ($update->getMessage()) {
+            if ($update->has('message') && $update->getMessage()) {
                 $this->handleMessage($update->getMessage());
             }
 
             // 处理回调查询（内联键盘点击）
-            if ($update->getCallbackQuery()) {
+            if ($update->has('callback_query') && $update->getCallbackQuery()) {
                 $this->handleCallbackQuery($update->getCallbackQuery());
             }
 
-            // 处理其他类型的更新...
+            // 处理 bot 成员状态变更（被踢出、权限变更等）
+            if ($update->has('my_chat_member') && $update->getMyChatMember()) {
+                $this->handleMyChatMember($update->getMyChatMember());
+            }
+
+            // 处理频道消息
+            if ($update->has('channel_post') && $update->getChannelPost()) {
+                $this->handleChannelPost($update->getChannelPost());
+            }
+
+            // 处理编辑的消息
+            if ($update->has('edited_message') && $update->getEditedMessage()) {
+                $this->handleEditedMessage($update->getEditedMessage());
+            }
+
         } catch (\Exception $e) {
             Log::error('Telegram webhook processing error: ' . $e->getMessage(), [
                 'update_id' => $update->getUpdateId(),
@@ -55,10 +70,6 @@ class TelegramWebhookService
 
         // 过滤掉Bot自己的消息，避免将Bot信息保存到数据库
         if ($isBot) {
-            Log::info('Ignoring message from bot', [
-                'bot_id' => $userId,
-                'bot_username' => $username
-            ]);
             return;
         }
 
@@ -92,5 +103,44 @@ class TelegramWebhookService
         if ($telegramUser) {
             $this->messageService->handleCallbackQuery($telegramUser, $data, $messageId, $callbackQueryId);
         }
+    }
+
+    /**
+     * 处理 bot 成员状态变更
+     */
+    private function handleMyChatMember($chatMember): void
+    {
+        $chatId = $chatMember->getChat()->getId();
+        $userId = $chatMember->getFrom()->getId();
+        $oldStatus = $chatMember->getOldChatMember()->getStatus();
+        $newStatus = $chatMember->getNewChatMember()->getStatus();
+
+        // 如果 bot 被踢出，可以在这里处理相关逻辑
+        if ($newStatus === 'kicked') {
+            // Bot 被踢出处理逻辑
+        }
+    }
+
+    /**
+     * 处理频道消息
+     */
+    private function handleChannelPost($channelPost): void
+    {
+        $chatId = $channelPost->getChat()->getId();
+        $text = $channelPost->getText();
+
+        // 这里可以添加处理频道消息的逻辑
+    }
+
+    /**
+     * 处理编辑的消息
+     */
+    private function handleEditedMessage($editedMessage): void
+    {
+        $chatId = $editedMessage->getChat()->getId();
+        $userId = $editedMessage->getFrom()->getId();
+        $text = $editedMessage->getText();
+
+        // 这里可以添加处理编辑消息的逻辑
     }
 }

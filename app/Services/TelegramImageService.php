@@ -63,12 +63,10 @@ class TelegramImageService
 
         if (!empty($filters['min_size'])) {
             $query->where('file_size', '>=', $filters['min_size']);
-            Log::info('Applied min_size filter:', ['min_size' => $filters['min_size']]);
         }
 
         if (!empty($filters['max_size'])) {
             $query->where('file_size', '<=', $filters['max_size']);
-            Log::info('Applied max_size filter:', ['max_size' => $filters['max_size']]);
         }
 
         if (!empty($filters['search'])) {

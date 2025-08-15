@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Button, Card, Input, Select, Modal } from '@/Components/UI';
+import { useTranslation } from 'react-i18next';
 import {
     FaTrash,
     FaDownload,
@@ -22,6 +23,7 @@ export default function ImageManagement({
     filters = {},
     languages = []
 }) {
+    const { t } = useTranslation();
     const [selectedImages, setSelectedImages] = useState(new Set());
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -50,11 +52,11 @@ export default function ImageManagement({
             const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
 
             if (!isValidType) {
-                toast.error(`${file.name} 不是有效的图片文件`);
+                toast.error(`${file.name} ${t('telegram.images.fileTypeError')}`);
                 return false;
             }
             if (!isValidSize) {
-                toast.error(`${file.name} 文件大小超过10MB`);
+                toast.error(`${file.name} ${t('telegram.images.fileSizeError')}`);
                 return false;
             }
             return true;
@@ -229,10 +231,10 @@ export default function ImageManagement({
                         <div className="flex items-center justify-between">
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">
-                                    图片管理
+                                    {t('telegram.images.title')}
                                 </h1>
                                 <p className="mt-1 text-sm text-gray-500">
-                                    管理Telegram Bot菜单中使用的图片资源
+                                    {t('telegram.images.description')}
                                 </p>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -249,7 +251,7 @@ export default function ImageManagement({
                                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
                                 >
                                     <FaUpload className="mr-2" />
-                                    上传图片
+                                    {t('telegram.images.uploadButton')}
                                 </label>
                                 {selectedImages.size > 0 && (
                                     <Button
@@ -258,7 +260,7 @@ export default function ImageManagement({
                                         className="flex items-center space-x-2"
                                     >
                                         <FaTrash />
-                                        <span>删除选中 ({selectedImages.size})</span>
+                                        <span>{t('telegram.images.deleteSelected', { count: selectedImages.size })}</span>
                                     </Button>
                                 )}
                             </div>
@@ -272,7 +274,7 @@ export default function ImageManagement({
                                 <div className="text-2xl font-bold text-blue-600">
                                     {stats.total_images || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">总图片数</div>
+                                <div className="text-sm text-gray-500">{t('telegram.images.totalImages')}</div>
                             </div>
                         </Card>
                         <Card padding="default">
@@ -280,7 +282,7 @@ export default function ImageManagement({
                                 <div className="text-2xl font-bold text-green-600">
                                     {stats.associated_images || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">已关联图片</div>
+                                <div className="text-sm text-gray-500">{t('telegram.images.associatedImages')}</div>
                             </div>
                         </Card>
                         <Card padding="default">
@@ -288,7 +290,7 @@ export default function ImageManagement({
                                 <div className="text-2xl font-bold text-purple-600">
                                     {formatFileSize(stats.total_size || 0)}
                                 </div>
-                                <div className="text-sm text-gray-500">总存储大小</div>
+                                <div className="text-sm text-gray-500">{t('telegram.images.totalStorageSize')}</div>
                             </div>
                         </Card>
                         <Card padding="default">
@@ -296,18 +298,18 @@ export default function ImageManagement({
                                 <div className="text-2xl font-bold text-orange-600">
                                     {stats.optimized_images || 0}
                                 </div>
-                                <div className="text-sm text-gray-500">已优化图片</div>
+                                <div className="text-sm text-gray-500">{t('telegram.images.optimizedImages')}</div>
                             </div>
                         </Card>
                     </div>
 
                     {/* 搜索和筛选 */}
-                    <Card title="搜索和筛选" padding="default" className="mb-6">
+                    <Card title={t('telegram.images.searchAndFilter')} padding="default" className="mb-6">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <Input
                                     type="text"
-                                    placeholder="搜索图片名称或描述..."
+                                    placeholder={t('telegram.images.searchPlaceholder')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -317,13 +319,13 @@ export default function ImageManagement({
                                 <Select
                                     value={mimeTypeFilter}
                                     onChange={(e) => setMimeTypeFilter(e.target.value)}
-                                    placeholder="选择格式"
+                                    placeholder={t('telegram.images.selectFormat')}
                                     options={[
-                                        { value: '', label: '所有格式' },
-                                        { value: 'image/jpeg', label: 'JPEG' },
-                                        { value: 'image/png', label: 'PNG' },
-                                        { value: 'image/gif', label: 'GIF' },
-                                        { value: 'image/webp', label: 'WebP' }
+                                        { value: '', label: t('telegram.images.allFormats') },
+                                        { value: 'image/jpeg', label: t('telegram.images.jpeg') },
+                                        { value: 'image/png', label: t('telegram.images.png') },
+                                        { value: 'image/gif', label: t('telegram.images.gif') },
+                                        { value: 'image/webp', label: t('telegram.images.webp') }
                                     ]}
                                 />
                             </div>
@@ -331,12 +333,12 @@ export default function ImageManagement({
                                 <Select
                                     value={sizeFilter}
                                     onChange={(e) => setSizeFilter(e.target.value)}
-                                    placeholder="选择大小"
+                                    placeholder={t('telegram.images.selectSize')}
                                     options={[
-                                        { value: '', label: '所有大小' },
-                                        { value: 'small', label: '小于1MB' },
-                                        { value: 'medium', label: '1-5MB' },
-                                        { value: 'large', label: '大于5MB' }
+                                        { value: '', label: t('telegram.images.allSizes') },
+                                        { value: 'small', label: t('telegram.images.lessThan1MB') },
+                                        { value: 'medium', label: t('telegram.images.1To5MB') },
+                                        { value: 'large', label: t('telegram.images.moreThan5MB') }
                                     ]}
                                 />
                             </div>
@@ -346,14 +348,14 @@ export default function ImageManagement({
                                     className="w-full flex items-center justify-center space-x-2"
                                 >
                                     <FaSearch />
-                                    <span>搜索</span>
+                                    <span>{t('telegram.images.searchButton')}</span>
                                 </Button>
                             </div>
                         </div>
                     </Card>
 
                     {/* 图片列表 */}
-                    <Card title="图片列表" padding="none">
+                    <Card title={t('telegram.images.imageList')} padding="none">
                         <div className="p-6">
                             {images.length > 0 ? (
                                 <>
@@ -367,7 +369,7 @@ export default function ImageManagement({
                                                 className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                             />
                                             <span className="ml-2 text-sm text-gray-700">
-                                                全选 ({selectedImages.size}/{images.length})
+                                                {t('telegram.images.selectAll', { selected: selectedImages.size, total: images.length })}
                                             </span>
                                         </label>
 
@@ -378,7 +380,7 @@ export default function ImageManagement({
                                                     variant="danger"
                                                     size="sm"
                                                 >
-                                                    批量删除
+                                                    {t('telegram.images.batchDelete')}
                                                 </Button>
                                             </div>
                                         )}
@@ -420,28 +422,28 @@ export default function ImageManagement({
                                                         <button
                                                             onClick={() => handlePreview(image)}
                                                             className="p-2 bg-white rounded-full text-gray-700 hover:text-blue-600"
-                                                            title="预览"
+                                                            title={t('telegram.images.preview')}
                                                         >
                                                             <FaEye />
                                                         </button>
                                                         <button
                                                             onClick={() => handleLinkToMenu(image)}
                                                             className="p-2 bg-white rounded-full text-gray-700 hover:text-green-600"
-                                                            title="关联菜单"
+                                                            title={t('telegram.images.linkToMenu')}
                                                         >
                                                             <FaLink />
                                                         </button>
                                                         <button
                                                             onClick={() => handleOptimize(image.id)}
                                                             className="p-2 bg-white rounded-full text-gray-700 hover:text-purple-600"
-                                                            title="优化图片"
+                                                            title={t('telegram.images.optimize')}
                                                         >
                                                             <FaCompress />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDelete(image.id)}
                                                             className="p-2 bg-white rounded-full text-gray-700 hover:text-red-600"
-                                                            title="删除"
+                                                            title={t('telegram.images.delete')}
                                                         >
                                                             <FaTrash />
                                                         </button>
@@ -462,7 +464,7 @@ export default function ImageManagement({
                                                     {/* 关联的菜单项 */}
                                                     {image.menu_items && image.menu_items.length > 0 && (
                                                         <div className="mt-2">
-                                                            <div className="text-xs text-gray-500 mb-1">关联菜单:</div>
+                                                            <div className="text-xs text-gray-500 mb-1">{t('telegram.images.associatedMenus')}:</div>
                                                             <div className="flex flex-wrap gap-1">
                                                                 {image.menu_items.slice(0, 2).map(menuItem => (
                                                                     <span
@@ -480,7 +482,7 @@ export default function ImageManagement({
                                                                 ))}
                                                                 {image.menu_items.length > 2 && (
                                                                     <span className="text-xs text-gray-500">
-                                                                        +{image.menu_items.length - 2} 更多
+                                                                        +{image.menu_items.length - 2} {t('telegram.images.more')}
                                                                     </span>
                                                                 )}
                                                             </div>
@@ -495,10 +497,10 @@ export default function ImageManagement({
                                 <div className="text-center py-12">
                                     <FaImage className="mx-auto h-12 w-12 text-gray-400" />
                                     <h3 className="mt-2 text-sm font-medium text-gray-900">
-                                        暂无图片
+                                        {t('telegram.images.noImages')}
                                     </h3>
                                     <p className="mt-1 text-sm text-gray-500">
-                                        开始上传您的第一张图片
+                                        {t('telegram.images.startUploading')}
                                     </p>
                                     <div className="mt-6">
                                         <label
@@ -506,7 +508,7 @@ export default function ImageManagement({
                                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
                                         >
                                             <FaUpload className="mr-2" />
-                                            上传图片
+                                            {t('telegram.images.uploadButton')}
                                         </label>
                                         <input
                                             type="file"
@@ -527,11 +529,11 @@ export default function ImageManagement({
                         <Modal
                             isOpen={showUploadModal}
                             onClose={() => !isUploading && setShowUploadModal(false)}
-                            title="上传图片"
+                            title={t('telegram.images.uploadModalTitle')}
                         >
                             <div className="space-y-4">
                                 <div className="text-sm text-gray-600">
-                                    准备上传 {uploadFiles.length} 个文件
+                                    {t('telegram.images.uploadingFiles', { count: uploadFiles.length })}
                                 </div>
 
                                 <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -579,7 +581,7 @@ export default function ImageManagement({
                                         onClick={() => setShowUploadModal(false)}
                                         disabled={isUploading}
                                     >
-                                        取消
+                                        {t('telegram.images.cancel')}
                                     </Button>
                                     <Button
                                         onClick={handleUpload}
@@ -587,7 +589,7 @@ export default function ImageManagement({
                                         className="flex items-center space-x-2"
                                     >
                                         <FaUpload />
-                                        <span>{isUploading ? '上传中...' : '开始上传'}</span>
+                                        <span>{isUploading ? t('telegram.images.uploading') : t('telegram.images.startUpload')}</span>
                                     </Button>
                                 </div>
                             </div>
@@ -599,7 +601,7 @@ export default function ImageManagement({
                         <Modal
                             isOpen={showPreviewModal}
                             onClose={() => setShowPreviewModal(false)}
-                            title="图片预览"
+                            title={t('telegram.images.previewModalTitle')}
                             size="large"
                         >
                             <div className="space-y-4">
@@ -613,27 +615,27 @@ export default function ImageManagement({
 
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
-                                        <span className="font-medium text-gray-700">文件名:</span>
+                                        <span className="font-medium text-gray-700">{t('telegram.images.fileName')}:</span>
                                         <span className="ml-2 text-gray-900">{previewImage.original_name}</span>
                                     </div>
                                     <div>
-                                        <span className="font-medium text-gray-700">文件大小:</span>
+                                        <span className="font-medium text-gray-700">{t('telegram.images.fileSize')}:</span>
                                         <span className="ml-2 text-gray-900">{formatFileSize(previewImage.file_size)}</span>
                                     </div>
                                     <div>
-                                        <span className="font-medium text-gray-700">尺寸:</span>
+                                        <span className="font-medium text-gray-700">{t('telegram.images.dimensions')}:</span>
                                         <span className="ml-2 text-gray-900">{previewImage.width} × {previewImage.height}</span>
                                     </div>
                                     <div>
-                                        <span className="font-medium text-gray-700">格式:</span>
+                                        <span className="font-medium text-gray-700">{t('telegram.images.format')}:</span>
                                         <span className="ml-2 text-gray-900 uppercase">{previewImage.mime_type}</span>
                                     </div>
                                     <div>
-                                        <span className="font-medium text-gray-700">上传时间:</span>
+                                        <span className="font-medium text-gray-700">{t('telegram.images.uploadTime')}:</span>
                                         <span className="ml-2 text-gray-900">{new Date(previewImage.created_at).toLocaleString()}</span>
                                     </div>
                                     <div>
-                                        <span className="font-medium text-gray-700">描述:</span>
+                                        <span className="font-medium text-gray-700">{t('telegram.images.description')}:</span>
                                         <span className="ml-2 text-gray-900">{previewImage.alt_text}</span>
                                     </div>
                                 </div>
@@ -643,7 +645,7 @@ export default function ImageManagement({
                                         variant="outline"
                                         onClick={() => setShowPreviewModal(false)}
                                     >
-                                        关闭
+                                        {t('telegram.images.close')}
                                     </Button>
                                     <a
                                         href={previewImage.url}
@@ -651,7 +653,7 @@ export default function ImageManagement({
                                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                                     >
                                         <FaDownload className="mr-2" />
-                                        下载
+                                        {t('telegram.images.download')}
                                     </a>
                                 </div>
                             </div>
@@ -663,35 +665,35 @@ export default function ImageManagement({
                         <Modal
                             isOpen={showLinkModal}
                             onClose={() => setShowLinkModal(false)}
-                            title="关联菜单项"
+                            title={t('telegram.images.linkToMenuModalTitle')}
                         >
                             <div className="space-y-4">
                                 <div className="text-sm text-gray-600">
-                                    为图片 "{linkingImage.alt_text}" 选择要关联的菜单项:
+                                    {t('telegram.images.linkToMenuDescription', { imageAltText: linkingImage.alt_text })}
                                 </div>
                                 {/* 语言与类型选择 */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                     <div>
-                                        <label className="block text-sm text-gray-700 mb-1">语言（可选）</label>
+                                        <label className="block text-sm text-gray-700 mb-1">{t('telegram.images.language')}:</label>
                                         <Select
                                             value={linkForm.language_id}
                                             onChange={(e)=>setLinkForm('language_id', e.target.value)}
-                                            placeholder={null}
+                                            placeholder={t('telegram.images.selectLanguage')}
                                             options={[
-                                                { value: '', label: '通用（所有语言）' },
+                                                { value: '', label: t('telegram.images.allLanguages') },
                                                 ...languages.map(lang => ({ value: String(lang.id), label: `${lang.name} (${lang.code})` }))
                                             ]}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-gray-700 mb-1">类型</label>
+                                        <label className="block text-sm text-gray-700 mb-1">{t('telegram.images.type')}:</label>
                                         <Select
                                             value={linkForm.type}
                                             onChange={(e)=>setLinkForm('type', e.target.value)}
-                                            placeholder={null}
+                                            placeholder={t('telegram.images.selectType')}
                                             options={[
-                                                { value: 'banner', label: 'banner' },
-                                                { value: 'icon', label: 'icon' },
+                                                { value: 'banner', label: t('telegram.images.banner') },
+                                                { value: 'icon', label: t('telegram.images.icon') },
                                             ]}
                                         />
                                     </div>
@@ -705,7 +707,7 @@ export default function ImageManagement({
                                                     {menuItem.key}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
-                                                    {menuItem.translations?.[0]?.title || '无标题'}
+                                                    {menuItem.translations?.[0]?.title || t('telegram.images.noTitle')}
                                                 </div>
                                             </div>
                                             <Button
@@ -718,16 +720,16 @@ export default function ImageManagement({
                                                         language_id: linkForm.language_id || null
                                                     }, {
                                                         onSuccess: () => {
-                                                            toast.success('关联成功');
+                                                            toast.success(t('telegram.images.linkSuccess'));
                                                             setShowLinkModal(false);
                                                         },
                                                         onError: () => {
-                                                            toast.error('关联失败');
+                                                            toast.error(t('telegram.images.linkError'));
                                                         }
                                                     });
                                                 }}
                                             >
-                                                关联
+                                                {t('telegram.images.link')}
                                             </Button>
                                         </div>
                                     ))}
@@ -738,7 +740,7 @@ export default function ImageManagement({
                                         variant="outline"
                                         onClick={() => setShowLinkModal(false)}
                                     >
-                                        取消
+                                        {t('telegram.images.cancel')}
                                     </Button>
                                 </div>
                             </div>

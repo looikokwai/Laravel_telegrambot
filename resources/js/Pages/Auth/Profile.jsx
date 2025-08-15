@@ -1,8 +1,11 @@
 import React from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { Button, Input, Card } from '@/Components/UI';
+import { useTranslation } from 'react-i18next';
 
 export default function Profile({ user }) {
+    const { t } = useTranslation();
+
     const { data, setData, put, processing, errors, recentlySuccessful } = useForm({
         name: user.name,
         email: user.email,
@@ -34,23 +37,23 @@ export default function Profile({ user }) {
 
     return (
         <>
-            <Head title="个人资料" />
-            
+            <Head title={t('auth.profileTitle')} />
+
             <div className="py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-3xl mx-auto">
                     <div className="mb-6">
-                        <h1 className="text-2xl font-bold text-gray-900">个人资料</h1>
+                        <h1 className="text-2xl font-bold text-gray-900">{t('auth.profileTitle')}</h1>
                         <p className="mt-1 text-sm text-gray-500">
-                            管理您的账户信息和密码
+                            {t('auth.profileSubtitle')}
                         </p>
                     </div>
 
                     <div className="space-y-6">
-                        <Card title="基本信息">
+                        <Card title={t('auth.basicInfo')}>
 
                             <form onSubmit={handleProfileUpdate} className="space-y-6">
                                 <Input
-                                    label="姓名"
+                                    label={t('auth.name')}
                                     id="name"
                                     type="text"
                                     value={data.name}
@@ -60,7 +63,7 @@ export default function Profile({ user }) {
                                 />
 
                                 <Input
-                                    label="邮箱"
+                                    label={t('auth.email')}
                                     id="email"
                                     type="email"
                                     value={data.email}
@@ -75,20 +78,20 @@ export default function Profile({ user }) {
                                         loading={processing}
                                         variant="primary"
                                     >
-                                        更新资料
+                                        {t('auth.updateProfile')}
                                     </Button>
-                                    
+
                                     {recentlySuccessful && (
-                                        <p className="text-sm text-green-600">✅ 资料已更新</p>
+                                        <p className="text-sm text-green-600">✅ {t('auth.profileUpdated')}</p>
                                     )}
                                 </div>
                             </form>
                         </Card>
 
-                        <Card title="更新密码">
+                        <Card title={t('auth.updatePassword')}>
                             <form onSubmit={handlePasswordUpdate} className="space-y-6">
                                 <Input
-                                    label="当前密码"
+                                    label={t('auth.currentPassword')}
                                     id="current_password"
                                     type="password"
                                     value={passwordData.current_password}
@@ -98,7 +101,7 @@ export default function Profile({ user }) {
                                 />
 
                                 <Input
-                                    label="新密码"
+                                    label={t('auth.newPassword')}
                                     id="password"
                                     type="password"
                                     value={passwordData.password}
@@ -108,7 +111,7 @@ export default function Profile({ user }) {
                                 />
 
                                 <Input
-                                    label="确认新密码"
+                                    label={t('auth.confirmNewPassword')}
                                     id="password_confirmation"
                                     type="password"
                                     value={passwordData.password_confirmation}
@@ -123,11 +126,11 @@ export default function Profile({ user }) {
                                         loading={passwordProcessing}
                                         variant="primary"
                                     >
-                                        更新密码
+                                        {t('auth.updatePassword')}
                                     </Button>
-                                    
+
                                     {passwordSuccess && (
-                                        <p className="text-sm text-green-600">✅ 密码已更新</p>
+                                        <p className="text-sm text-green-600">✅ {t('auth.passwordUpdated')}</p>
                                     )}
                                 </div>
                             </form>

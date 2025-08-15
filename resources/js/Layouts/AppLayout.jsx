@@ -2,6 +2,8 @@ import { Link, usePage, router } from "@inertiajs/react";
 import { Toaster, toast } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { Button } from "@/Components/UI";
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import {
     FaTachometerAlt,
     FaUsers,
@@ -47,51 +49,52 @@ function FlashMessages() {
 export default function AppLayout({ children, className = "" }) {
     const { auth, url } = usePage().props;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { t } = useTranslation();
 
     // 确保 url 存在，如果不存在则使用空字符串
     const currentUrl = url || '';
 
     const navigationItems = [
         {
-            name: "概览",
+            name: t('navigation.overview'),
             href: "/dashboard",
             page: "Dashboard",
             icon: <FaChartBar className="w-4 h-4" />,
             current: currentUrl === "/dashboard",
         },
         {
-            name: "Telegram Bot",
+            name: t('navigation.telegramBot'),
             href: "/telegram",
             page: "Telegram",
             icon: <FaRobot className="w-4 h-4" />,
             current: currentUrl.startsWith("/telegram"),
             children: [
                 {
-                    name: "用户管理",
+                    name: t('navigation.userManagement'),
                     href: "/telegram/users",
                     icon: <FaUsers className="w-4 h-4" />,
                     current: currentUrl === "/telegram/users",
                 },
                 {
-                    name: "消息广播",
+                    name: t('navigation.messageBroadcast'),
                     href: "/telegram/broadcast",
                     icon: <FaBroadcastTower className="w-4 h-4" />,
                     current: currentUrl === "/telegram/broadcast",
                 },
                 {
-                    name: "菜单管理",
+                    name: t('navigation.menuManagement'),
                     href: "/telegram/menu-management",
                     icon: <FaList className="w-4 h-4" />,
                     current: currentUrl === "/telegram/menu-management",
                 },
                 {
-                    name: "图片管理",
+                    name: t('navigation.imageManagement'),
                     href: "/telegram/image-management",
                     icon: <FaImages className="w-4 h-4" />,
                     current: currentUrl === "/telegram/image-management",
                 },
                 {
-                    name: "语言管理",
+                    name: t('navigation.languageManagement'),
                     href: "/telegram/language-management",
                     icon: <FaLanguage className="w-4 h-4" />,
                     current: currentUrl === "/telegram/language-management",
@@ -99,7 +102,7 @@ export default function AppLayout({ children, className = "" }) {
             ],
         },
         {
-            name: "个人资料",
+            name: t('navigation.profile'),
             href: "/profile",
             page: "Auth/Profile",
             icon: <FaUser className="w-4 h-4" />,
@@ -120,7 +123,7 @@ export default function AppLayout({ children, className = "" }) {
                                         href="/dashboard"
                                         className="text-xl font-bold text-gray-900"
                                     >
-                                        应用管理
+                                        {t('common.appManagement')}
                                     </Link>
                                 </div>
                                 <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
@@ -175,15 +178,16 @@ export default function AppLayout({ children, className = "" }) {
                                 </div>
                             </div>
                             <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+                                <LanguageSwitcher />
                                 <span className="text-sm text-gray-700">
-                                    欢迎，{auth?.user?.name}
+                                    {t('common.welcome')}，{auth?.user?.name}
                                 </span>
                                 <Button
                                     onClick={() => router.post("/logout")}
                                     variant="outline"
                                     size="sm"
                                 >
-                                    登出
+                                    {t('common.logout')}
                                 </Button>
                             </div>
 

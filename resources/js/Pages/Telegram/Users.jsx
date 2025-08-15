@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Button, Card, Input } from '@/Components/UI';
+import { useTranslation } from 'react-i18next';
 import { FaSearch, FaUserCheck, FaUserTimes, FaSpinner } from 'react-icons/fa';
 
 export default function TelegramUsers({ users }) {
+    const { t } = useTranslation();
     const [search, setSearch] = useState('');
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -45,14 +47,14 @@ export default function TelegramUsers({ users }) {
 
     return (
         <>
-            <Head title="用户管理" />
+            <Head title={t('telegram.users.userManagement')} />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-6">
-                        <h1 className="text-2xl font-bold text-gray-900">用户管理</h1>
+                        <h1 className="text-2xl font-bold text-gray-900">{t('telegram.users.userManagement')}</h1>
                         <p className="mt-1 text-sm text-gray-500">
-                            管理所有Telegram Bot用户 ({allUsers.length} 个用户)
+                            {t('telegram.users.userManagementSubtitle')} ({allUsers.length} {t('telegram.users.foundUsers')})
                         </p>
                     </div>
 
@@ -67,7 +69,7 @@ export default function TelegramUsers({ users }) {
                                     )}
                                 </div>
                                 <Input
-                                    placeholder="搜索用户名、姓名或ID..."
+                                    placeholder={t('telegram.users.searchPlaceholder')}
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="pl-10"
@@ -76,7 +78,7 @@ export default function TelegramUsers({ users }) {
                             </div>
                             {search && (
                                 <div className="text-sm text-gray-500">
-                                    搜索: "{search}" - 找到 {allUsers.length} 个用户
+                                    {t('telegram.users.searchResults')}: "{search}" - {t('telegram.users.foundUsers')} {allUsers.length}
                                 </div>
                             )}
                         </div>
@@ -86,19 +88,19 @@ export default function TelegramUsers({ users }) {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            用户
+                                            {t('telegram.users.user')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            语言
+                                            {t('telegram.users.language')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            状态
+                                            {t('telegram.users.status')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            最后活跃
+                                            {t('telegram.users.lastActive')}
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            操作
+                                            {t('telegram.users.operations')}
                                         </th>
                                     </tr>
                                 </thead>
@@ -116,10 +118,10 @@ export default function TelegramUsers({ users }) {
                                                     </div>
                                                     <div className="ml-4">
                                                         <div className="text-sm font-medium text-gray-900">
-                                                            {user.first_name || 'Unknown'}
+                                                            {user.first_name || t('telegram.users.unknown')}
                                                         </div>
                                                         <div className="text-sm text-gray-500">
-                                                            @{user.username || 'no_username'}
+                                                            @{user.username || t('telegram.users.noUsername')}
                                                         </div>
                                                         <div className="text-xs text-gray-400">
                                                             ID: {user.telegram_user_id}
@@ -138,11 +140,11 @@ export default function TelegramUsers({ users }) {
                                                         ? 'bg-green-100 text-green-800'
                                                         : 'bg-red-100 text-red-800'
                                                 }`}>
-                                                    {user.is_active ? '活跃' : '非活跃'}
+                                                    {user.is_active ? t('telegram.users.active') : t('telegram.users.inactive')}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {user.last_interaction ? new Date(user.last_interaction).toLocaleString('zh-CN') : '从未'}
+                                                {user.last_interaction ? new Date(user.last_interaction).toLocaleString() : t('telegram.users.never')}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <Button
@@ -154,12 +156,12 @@ export default function TelegramUsers({ users }) {
                                                     {user.is_active ? (
                                                         <>
                                                             <FaUserTimes className="w-3 h-3" />
-                                                            <span>禁用</span>
+                                                            <span>{t('telegram.users.disable')}</span>
                                                         </>
                                                     ) : (
                                                         <>
                                                             <FaUserCheck className="w-3 h-3" />
-                                                            <span>启用</span>
+                                                            <span>{t('telegram.users.enable')}</span>
                                                         </>
                                                     )}
                                                 </Button>
@@ -173,7 +175,7 @@ export default function TelegramUsers({ users }) {
                         {allUsers.length === 0 && (
                             <div className="text-center py-12">
                                 <div className="text-gray-500">
-                                    {search ? '没有找到匹配的用户' : '暂无用户数据'}
+                                    {search ? t('telegram.users.noUsersFound') : t('telegram.users.noUserData')}
                                 </div>
                             </div>
                         )}
@@ -182,10 +184,10 @@ export default function TelegramUsers({ users }) {
                         {users?.meta && (
                             <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-6">
                                 <div className="text-sm text-gray-700">
-                                    显示 {users.meta.from || 0} 到 {users.meta.to || 0} 条，共 {users.meta.total || 0} 条记录
+                                    {t('telegram.users.showing')} {users.meta.from || 0} {t('telegram.users.to')} {users.meta.to || 0} {t('telegram.users.of')} {users.meta.total || 0} {t('telegram.users.records')}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                    第 {users.meta.current_page || 1} 页，共 {users.meta.last_page || 1} 页
+                                    {t('telegram.users.page')} {users.meta.current_page || 1} {t('telegram.users.ofPages')} {users.meta.last_page || 1} {t('telegram.users.page')}
                                 </div>
                             </div>
                         )}
